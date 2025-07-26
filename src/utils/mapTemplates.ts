@@ -272,8 +272,155 @@ const map4 = [
   }
 ];
 
+const map5 = [
+  {
+    row: 2,
+    col: 2,
+    tileType: ETiles.CRYSTAL_BIG
+  },
+  {
+    row: 2,
+    col: 6,
+    tileType: ETiles.CRYSTAL_BIG
+  },
+  {
+    row: 0,
+    col: 0,
+    tileType: ETiles.SPAWN
+  },
+  {
+    row: 0,
+    col: 8,
+    tileType: ETiles.SPAWN
+  },
+  {
+    row: 0,
+    col: 0,
+    tileType: ETiles.SPAWN
+  },
+  {
+    row: 5,
+    col: 8,
+    tileType: ETiles.SPAWN
+  },
+  {
+    row: 1,
+    col: 2,
+    tileType: ETiles.POWER
+  },
+  {
+    row: 3,
+    col: 6,
+    tileType: ETiles.POWER
+  },
+  {
+    row: 1,
+    col: 2,
+    tileType: ETiles.PHYSICAL_RESISTANCE
+  },
+  {
+    row: 3,
+    col: 6,
+    tileType: ETiles.PHYSICAL_RESISTANCE
+  },
+  {
+    row: 0,
+    col: 4,
+    tileType: ETiles.CRYSTAL_DAMAGE
+  },
+  {
+    row: 4,
+    col: 4,
+    tileType: ETiles.CRYSTAL_DAMAGE
+  }
+];
+
+const map6 = [
+  {
+    row: 0,
+    col: 1,
+    tileType: ETiles.CRYSTAL_SMALL
+  },
+  {
+    row: 2,
+    col: 2,
+    tileType: ETiles.CRYSTAL_SMALL
+  },
+  {
+    row: 4,
+    col: 1,
+    tileType: ETiles.CRYSTAL_SMALL
+  },
+  {
+    row: 0,
+    col: 7,
+    tileType: ETiles.CRYSTAL_SMALL
+  },
+  {
+    row: 2,
+    col: 6,
+    tileType: ETiles.CRYSTAL_SMALL
+  },
+  {
+    row: 4,
+    col: 7,
+    tileType: ETiles.CRYSTAL_SMALL
+  },
+  {
+    row: 1,
+    col: 0,
+    tileType: ETiles.SPAWN
+  },
+  {
+    row: 3,
+    col: 8,
+    tileType: ETiles.SPAWN
+  },
+  {
+    row: 3,
+    col: 0,
+    tileType: ETiles.SPAWN
+  },
+  {
+    row: 1,
+    col: 8,
+    tileType: ETiles.SPAWN
+  },
+  {
+    row: 2,
+    col: 1,
+    tileType: ETiles.POWER
+  },
+  {
+    row: 2,
+    col: 7,
+    tileType: ETiles.POWER
+  },
+  {
+    row: 0,
+    col: 5,
+    tileType: ETiles.MAGICAL_RESISTANCE
+  },
+  {
+    row: 4,
+    col: 3,
+    tileType: ETiles.MAGICAL_RESISTANCE
+  },
+  {
+    row: 0,
+    col: 3,
+    tileType: ETiles.CRYSTAL_DAMAGE
+  },
+  {
+    row: 4,
+    col: 5,
+    tileType: ETiles.CRYSTAL_DAMAGE
+  }
+];
+
+
 export const mapTemplates: {
   row: number,
   col: number,
   tileType: ETiles
-}[][] = [map1, map2, map3, map4];
+}[][] = [map1, map2, map3, map4, map5, map6];

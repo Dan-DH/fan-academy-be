@@ -583,7 +583,25 @@ export function createNewGameBoardState(): ITile[] {
     for (let col = 0; col < 9; col++) {
       const { x, y } = centerPoints[boardPosition];
       const specialTile = mapData.find((tile) => tile.col === col && tile.row === row);
-      const isCrystalTile = specialTile?.tileType === ETiles.CRYSTAL;
+
+      let health = 0;
+      switch (specialTile!.tileType) {
+        case ETiles.CRYSTAL_SMALL:
+          health = 3000;
+          break;
+        case ETiles.CRYSTAL:
+          health = 4500;
+          break;
+        case ETiles.CRYSTAL_BIG:
+          health = 9000;
+          break;
+        default:
+          health = 4500;
+          break;
+      }
+      
+      const isCrystalTile = specialTile && [ETiles.CRYSTAL, ETiles.CRYSTAL_SMALL, ETiles.CRYSTAL_BIG].includes(specialTile.tileType);
+
       const tile = createTileData({
         row,
         col,
