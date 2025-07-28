@@ -43,13 +43,9 @@ export const EmailService = {
 
       console.log('sendSmtpEmail', sendSmtpEmail);
 
-      // 🛑 COMMENT OUT OR REMOVE THIS LINE TO DISABLE EMAIL SENDING 🛑
-      // const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
-      // console.log('API called successfully. Returned data: ' + JSON.stringify(result));
-
-      // 📝 Optional: Add a log to confirm email sending is disabled 📝
-      console.log('Email sending is currently disabled. No email sent.');
-
+      // COMMENT OUT THIS LINE TO DISABLE EMAIL SENDING
+      const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
+      
     } catch(err) {
       console.log(err);
       throw new CustomError(50, `${err}`);
