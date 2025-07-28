@@ -170,3 +170,9 @@ dist-ssr
 
 # Scripts folder
 /src/scripts/
+
+# emails
+/src/emails/
+
+# local gitignore version
+.gitignore
