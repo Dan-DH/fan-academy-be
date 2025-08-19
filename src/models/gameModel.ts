@@ -247,7 +247,7 @@ const FactionSchema = new Schema({
     required: true
   },
   unitsInHand: {
-    type: [UnitOrItemSchema], // REVIEW: doesn't enforce data validation
+    type: [UnitOrItemSchema],
     default: []
   },
   unitsInDeck: {
