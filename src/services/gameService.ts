@@ -224,10 +224,12 @@ const GameService = {
         { status: EGameStatus.CHALLENGE }
       ]
     });
-
     if (!game) throw new CustomError(24);
+
     const deletedGame = await Game.findByIdAndDelete(game._id);
-    if (!deletedGame) throw new CustomError(24); // REVIEW
+    if (!deletedGame) throw new CustomError(24);
+
+    await ChatLog.findByIdAndDelete(game._id);
 
     const result = deletedGame.players.map(player => { return player.userData.toString(); });
     return result;
