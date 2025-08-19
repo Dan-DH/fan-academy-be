@@ -8,7 +8,6 @@ class EquippedItem extends Schema {
 }
 
 class Unit extends Schema {
-  // TODO: strings here should be enums
   @type('string') unitClass: string; //  hero | item
   @type('string') unitType: string; //  archer, voidmonk...
   @type('string') unitId: string; //  used to locate the unit in the board. eg: P213 -> 13th unit deployed by second user
@@ -17,7 +16,7 @@ class Unit extends Schema {
   @type('number') currentHealth: number;
   @type('boolean') isKO: boolean;
   @type('number') movement: number;
-  @type('number') range: number; // 1, 2, 3 // TODO: need a function for calculating potential targets (ortogonal, 2 distance, etc...)
+  @type('number') range: number; // 1, 2, 3
   @type('string') attackType: string; //  physiucal | magical
   @type('number') rangeAttackDamage: number;
   @type('number') meleeAttackDamage: number;
@@ -60,7 +59,7 @@ class TurnAction extends Schema {
 
 class Turn extends Schema {
   @type('number') turnNumber: number;
-  @type('string') activeuser: string; // TODO: userId, not room client id
+  @type('string') activeuser: string;
   @type([TurnAction]) actions: TurnAction[];
 }
 

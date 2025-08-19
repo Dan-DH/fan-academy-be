@@ -434,7 +434,7 @@ export function createElvesPriestessData(data: Partial<IHero>): IHero {
     maxHealth: data.maxHealth ?? baseHealth,
     currentHealth: data.currentHealth ?? baseHealth,
     movement: 2,
-    attackRange: 2, // TODO: applies debuff
+    attackRange: 2,
     healingRange: 3,
     attackType: EAttackType.MAGICAL,
     basePower,
