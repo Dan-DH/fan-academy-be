@@ -15,7 +15,11 @@ import { DiscordNotificationService } from './discordNotificationService';
 
 const UserService = {
   async signup(req: Request, res: Response, next: NextFunction): Promise<void> {
-    const { username, email, password } = req.body;
+    const username = req.body.username.trim();
+    const email = req.body.email.trim();
+    const password = req.body.password.trim();
+
+    if (!username || !email || !password) throw new CustomError(31);
 
     // Check if the username or email are already in use
     const userAlreadyExists: IUser[] = await User.find({ $or: [{ username }, { email }] });
