@@ -29,7 +29,6 @@ export const EmailService = {
       ? emailData.email.map((mail) => ({ email: mail }))
       : [{ email: emailData.email }];
 
-    console.log("PARAMS =>", emailData.params);
     const emailParams = emailData.params ?? { placeHolder: '' };
 
     try {

@@ -148,8 +148,7 @@ export class GameRoom extends Room {
       message: string,
       token: string
     }) => {
-      console.log(`Chat sent by client ${client.auth._id}`);
-      console.log(this.roomId);
+      console.log(`Chat sent by client ${client.auth._id} in room ${this.roomId}`);
       const sanitizedMessage = sanitize(message.message);
 
       // Update the chat log on the db, or create one if none exists
