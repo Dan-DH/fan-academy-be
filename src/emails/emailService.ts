@@ -56,7 +56,7 @@ export const EmailService = {
     emailConfirmationLink: string
   }): Promise<void> {
     const { username, email, emailConfirmationLink } = data;
-    const confirmationLink = `https://fan-academy-be.onrender.com/users/emailconfirm?token=${emailConfirmationLink}`;
+    const confirmationLink = `https://fan-academy-mirror.onrender.com/users/emailconfirm?token=${emailConfirmationLink}`;
 
     await this.sendEmail({
       templateId: 1,
