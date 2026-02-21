@@ -24,7 +24,8 @@ export enum EWinConditions {
 
 export enum EFaction {
   COUNCIL = 'Council',
-  DARK_ELVES = 'Dark Elves'
+  DARK_ELVES = 'Dark Elves',
+  DWARVES = 'Dwarves'
 }
 
 export enum EActionType {
@@ -62,7 +63,11 @@ export enum EItems {
   // Dark elves
   SOUL_STONE = 'soulStone',
   SOUL_HARVEST = 'soulHarvest',
-  MANA_VIAL = 'manaVial'
+  MANA_VIAL = 'manaVial',
+
+  // Dwarves
+  DWARVEN_BREW = 'dwarvenBrew',
+  PULVERIZER = 'pulverizer'
 }
 
 export enum EClass {
@@ -84,7 +89,14 @@ export enum EHeroes {
   NECROMANCER = 'necromancer',
   PHANTOM = 'phantom',
   VOIDMONK = 'voidmonk',
-  WRAITH = 'wraith'
+  WRAITH = 'wraith',
+
+  // Dwarves
+  PALADIN = 'paladin',
+  GUNNER = 'gunner',
+  ENGINEER = 'engineer',
+  GRENADIER = 'grenadier',
+  ANNIHILATOR = 'annihilator'
 }
 
 export enum ETiles {
