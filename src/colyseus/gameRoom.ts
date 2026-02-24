@@ -10,6 +10,7 @@ import Game from "../models/gameModel";
 import User from '../models/userModel';
 import GameService from "../services/gameService";
 import { DiscordNotificationService } from "../services/discordNotificationService";
+import { factionWinsKey } from "../utils/gameUtils";
 
 export class GameRoom extends Room {
   connectedClients: Set<string> = new Set();
@@ -215,7 +216,7 @@ export class GameRoom extends Room {
         $inc: {
           'stats.totalGames': 1,
           'stats.totalWins': 1,
-          ...userWon.faction === EFaction.COUNCIL ? { 'stats.councilWins': 1 } : { 'stats.elvesWins': 1 }
+          ...factionWinsKey[userWon.faction!]
         }
       }
     );

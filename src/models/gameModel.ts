@@ -148,6 +148,10 @@ const HeroSchema = new Schema({
     type: Number,
     required: true
   },
+  buffRange: {
+    type: Number,
+    required: true
+  },
   attackType: {
     type: String,
     enum: EAttackType,
@@ -195,6 +199,10 @@ const HeroSchema = new Schema({
     default: 1
   },
   canHeal: {
+    type: Boolean,
+    required: true
+  },
+  canBuff: {
     type: Boolean,
     required: true
   },

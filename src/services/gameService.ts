@@ -5,7 +5,7 @@ import { EFaction, EGameStatus, EWinConditions } from "../enums/game.enums";
 import IGame, { IPlayerData, IPopulatedPlayerData, IPopulatedUserData } from "../interfaces/gameInterface";
 import ChatLog from "../models/chatlogModel";
 import Game from "../models/gameModel";
-import { createNewGameBoardState, createNewGameFactionState } from "../utils/newGameData";
+import { createNewGameBoardState, createNewGameFactionState, factionWinsKey } from "../utils/gameUtils";
 import { EmailService } from "../emails/emailService";
 import User from "../models/userModel";
 import { DiscordNotificationService } from "./discordNotificationService";
@@ -254,7 +254,7 @@ const GameService = {
           $inc: {
             'stats.totalGames': 1,
             'stats.totalWins': 1,
-            ...winner.faction === EFaction.COUNCIL ? { 'stats.councilWins': 1 } : { 'stats.elvesWins': 1 }
+            ...factionWinsKey[winner.faction!]
           }
         }
       );

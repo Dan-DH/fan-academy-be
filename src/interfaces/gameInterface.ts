@@ -67,36 +67,47 @@ export interface IHero {
   faction: EFaction;
   unitType: EHeroes;
   unitId: string; // userId_unitName_unitNumber
+  belongsTo: number;
+
   boardPosition: number;
   row: number;
   col: number;
+
   baseHealth: number;
   maxHealth: number;
   currentHealth: number;
+
   isKO: boolean;
   lastBreath: boolean;
+
   movement: number;
   attackRange: number;
   healingRange: number;
+  buffRange?: number;
   attackType: EAttackType;
   basePower: number;
+
   physicalDamageResistance: number;
   magicalDamageResistance: number;
   basePhysicalDamageResistance: number;
   baseMagicalDamageResistance: number;
+
   factionBuff: boolean;
   runeMetal: boolean;
   shiningHelm: boolean;
   superCharge: boolean;
-  belongsTo: number;
   canHeal: boolean;
+  canBuff?: boolean;
   unitsConsumed?: number;
   isDebuffed: boolean;
   attackTile: boolean;
-  manavial?: boolean;
-  speedTile?: boolean
+  manaVial?: boolean;
+  speedTile?: boolean;
+  dwarvenBrew?: boolean;
+  engineerShield?: string;
+  annihilatorDebuff?: boolean;
+  shieldingAlly?: string;
 }
-
 /**
  * Faction Interface
  */
