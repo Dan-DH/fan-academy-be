@@ -39,14 +39,14 @@ function createElvesDeck(userId: string): (IHero | IItem)[] {
       itemType: EItems.RUNE_METAL
     });
 
-    const factionBuff = createItemData( {
+    const factionEquipment = createItemData( {
       unitId: `${userId}_soulStone_${index}`,
       faction: EFaction.DARK_ELVES,
       itemType: EItems.SOUL_STONE
     });
 
     unitsDeck.push(impaler, voidMonk, necromancer, priestess);
-    itemsDeck.push(shiningHelm, runeMetal, factionBuff);
+    itemsDeck.push(shiningHelm, runeMetal, factionEquipment);
   }
 
   for (let index = 0; index < 2; index++) {
@@ -96,7 +96,7 @@ function createGenericElvesData(data: Partial<IHero>): {
   unitId: string,
   boardPosition: number,
   isKO: boolean,
-  factionBuff: boolean,
+  factionEquipment: boolean,
   runeMetal: boolean,
   shiningHelm: boolean,
   superCharge: boolean,
@@ -104,12 +104,16 @@ function createGenericElvesData(data: Partial<IHero>): {
   lastBreath: boolean,
   row: number,
   col: number,
-  isDebuffed: boolean,
+  priestessDebuff: boolean,
   attackTile: boolean,
   manaVial: boolean,
   speedTile: boolean,
   buffRange: number,
-  canBuff: boolean
+  canBuff: boolean,
+  engineerShield: undefined,
+  shieldingAlly: undefined,
+  annihilatorDebuff: boolean,
+  dwarvenBrew: boolean
 } {
   return {
     class: EClass.HERO,
@@ -118,19 +122,23 @@ function createGenericElvesData(data: Partial<IHero>): {
     boardPosition: data.boardPosition ?? 51,
     isKO: data.isKO ?? false,
     lastBreath: data.lastBreath ?? false,
-    factionBuff: data.factionBuff ?? false,
+    factionEquipment: data.factionEquipment ?? false,
     runeMetal: data.runeMetal ?? false,
     shiningHelm: data.shiningHelm ?? false,
     superCharge: data.superCharge ?? false,
     belongsTo: data.belongsTo ?? 1,
     row: data.row ?? 0,
     col: data.col ?? 0,
-    isDebuffed: data.isDebuffed ?? false,
+    priestessDebuff: data.priestessDebuff ?? false,
     attackTile: data.attackTile ?? false,
     manaVial: data.manaVial ?? false,
     speedTile: data.speedTile ?? false,
     buffRange: 0,
-    canBuff: false
+    canBuff: false,
+    engineerShield: undefined,
+    shieldingAlly: undefined,
+    annihilatorDebuff: data.annihilatorDebuff ?? false,
+    dwarvenBrew: data.dwarvenBrew ?? false
   };
 }
 

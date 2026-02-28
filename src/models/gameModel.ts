@@ -23,6 +23,10 @@ const GameOverSchema = new Schema({
  * Item Schema
  */
 const CrystalSchema = new Schema({
+  unitId: {
+    type: String,
+    required: true
+  },
   belongsTo: {
     type: Number,
     required: true
@@ -32,6 +36,14 @@ const CrystalSchema = new Schema({
     required: true
   },
   currentHealth: {
+    type: Number,
+    required: true
+  },
+  row: {
+    type: Number,
+    required: true
+  },
+  col: {
     type: Number,
     required: true
   },
@@ -50,6 +62,10 @@ const CrystalSchema = new Schema({
   debuffLevel: {
     type: Number,
     required: true
+  },
+  engineerShield: {
+    type: String,
+    required: false
   }
 }, { _id: false });
 
@@ -77,6 +93,11 @@ const ItemSchema = new Schema({
     type: Number,
     required: true,
     default: 1
+  },
+  row: {
+    type: Number,
+    required: true,
+    default: 10
   },
   canHeal: {
     type: Boolean,
@@ -106,7 +127,7 @@ const HeroSchema = new Schema({
   },
   boardPosition: {
     type: Number,
-    default: 51
+    required: true
   },
   row: {
     type: Number,
@@ -134,7 +155,7 @@ const HeroSchema = new Schema({
   },
   lastBreath: {
     type: Boolean,
-    default: false
+    default: true
   },
   movement: {
     type: Number,
@@ -177,7 +198,7 @@ const HeroSchema = new Schema({
     type: Number,
     required: true
   },
-  factionBuff: {
+  factionEquipment: {
     type: Boolean,
     required: true
   },
@@ -210,7 +231,7 @@ const HeroSchema = new Schema({
     type: Number,
     default: 0
   },
-  isDebuffed: {
+  priestessDebuff: {
     type: Boolean,
     required: true
   },
@@ -220,10 +241,26 @@ const HeroSchema = new Schema({
   },
   manaVial: {
     type: Boolean,
-    required: false
+    required: true
   },
   speedTile: {
     type: Boolean,
+    required: true
+  },
+  dwarvenBrew: {
+    type: Boolean,
+    required: true
+  },
+  engineerShield: {
+    type: String,
+    required: false
+  },
+  annihilatorDebuff: {
+    type: Boolean,
+    required: true
+  },
+  shieldingAlly: {
+    type: String,
     required: false
   }
 }, { _id: false });
@@ -431,11 +468,11 @@ const GameSchema = new Schema({
   activePlayer: {
     type: mongoose.Schema.Types.ObjectId,
     required: false
-  }, // userId
+  },
   chatLogs: {
     type: Types.ObjectId,
     ref: 'ChatLog',
-    required: false
+    required: false // TODO: remove this field. Make it into it's own query (or do a lookup)
   }
 });
 

@@ -57,6 +57,7 @@ export function createNewGameBoardState(): ITile[] {
         const crystalHp = getCrystalHp(specialTile.tileType);
 
         crystalData = {
+          unitId: `crystal_${boardPosition}`,
           belongsTo: col > 4 ? 2 : 1,
           maxHealth: crystalHp,
           currentHealth: crystalHp,

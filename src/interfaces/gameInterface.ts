@@ -33,19 +33,6 @@ export interface ITurnMessage {
 }
 
 /**
- * Crystal Interface
- */
-export interface ICrystal {
-  belongsTo: number;
-  maxHealth: number;
-  currentHealth: number;
-  isDestroyed: boolean;
-  isLastCrystal: boolean;
-  boardPosition: number;
-  debuffLevel: number;
-}
-
-/**
  * Item Interface
  */
 export interface IItem {
@@ -54,6 +41,7 @@ export interface IItem {
   unitId: string; // userId_itemName_itemNumber
   itemType: EItems;
   boardPosition: number; // 45-51
+  row: number;
   belongsTo: number;
   canHeal: boolean;
   dealsDamage: boolean;
@@ -64,42 +52,36 @@ export interface IItem {
  */
 export interface IHero {
   class: EClass;
-  faction: EFaction;
-  unitType: EHeroes;
   unitId: string; // userId_unitName_unitNumber
   belongsTo: number;
-
   boardPosition: number;
+  faction: EFaction;
+  unitType: EHeroes;
   row: number;
   col: number;
-
   baseHealth: number;
   maxHealth: number;
   currentHealth: number;
-
   isKO: boolean;
   lastBreath: boolean;
-
   movement: number;
   attackRange: number;
   healingRange: number;
-  buffRange?: number;
+  buffRange: number;
   attackType: EAttackType;
   basePower: number;
-
   physicalDamageResistance: number;
   magicalDamageResistance: number;
   basePhysicalDamageResistance: number;
   baseMagicalDamageResistance: number;
-
-  factionBuff: boolean;
+  factionEquipment: boolean;
   runeMetal: boolean;
   shiningHelm: boolean;
   superCharge: boolean;
   canHeal: boolean;
-  canBuff?: boolean;
+  canBuff: boolean;
   unitsConsumed?: number;
-  isDebuffed: boolean;
+  priestessDebuff: boolean;
   attackTile: boolean;
   manaVial?: boolean;
   speedTile?: boolean;
@@ -166,6 +148,7 @@ export interface IPlayerState {
  * Crystal Interface
  */
 export interface ICrystal {
+  unitId: string;
   belongsTo: number;
   maxHealth: number;
   currentHealth: number;
@@ -175,6 +158,7 @@ export interface ICrystal {
   debuffLevel: number;
   row: number;
   col: number;
+  engineerShield?: string;
 }
 
 /**
