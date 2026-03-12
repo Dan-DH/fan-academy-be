@@ -239,6 +239,14 @@ const HeroSchema = new Schema({
     type: Boolean,
     required: true
   },
+  magicalResistanceTile: {
+    type: Boolean,
+    required: true
+  },
+  physicalResistanceTile: {
+    type: Boolean,
+    required: true
+  },
   manaVial: {
     type: Boolean,
     required: true

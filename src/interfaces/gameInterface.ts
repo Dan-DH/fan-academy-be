@@ -80,9 +80,11 @@ export interface IHero {
   superCharge: boolean;
   canHeal: boolean;
   canBuff: boolean;
-  unitsConsumed?: number;
+  unitsConsumed?: number
   priestessDebuff: boolean;
   attackTile: boolean;
+  magicalResistanceTile: boolean;
+  physicalResistanceTile: boolean;
   manaVial?: boolean;
   speedTile?: boolean;
   dwarvenBrew?: boolean;

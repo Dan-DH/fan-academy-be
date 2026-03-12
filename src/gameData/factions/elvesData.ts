@@ -106,6 +106,8 @@ function createGenericElvesData(data: Partial<IHero>): {
   col: number,
   priestessDebuff: boolean,
   attackTile: boolean,
+  magicalResistanceTile: boolean;
+  physicalResistanceTile: boolean;
   manaVial: boolean,
   speedTile: boolean,
   buffRange: number,
@@ -131,6 +133,8 @@ function createGenericElvesData(data: Partial<IHero>): {
     col: data.col ?? 0,
     priestessDebuff: data.priestessDebuff ?? false,
     attackTile: data.attackTile ?? false,
+    magicalResistanceTile: data.magicalResistanceTile ?? false,
+    physicalResistanceTile: data.physicalResistanceTile ?? false,
     manaVial: data.manaVial ?? false,
     speedTile: data.speedTile ?? false,
     buffRange: 0,

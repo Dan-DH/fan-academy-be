@@ -108,6 +108,8 @@ function createGenericDwarvesData(data: Partial<IHero>): {
   col: number,
   priestessDebuff: boolean,
   attackTile: boolean,
+  magicalResistanceTile: boolean;
+  physicalResistanceTile: boolean;
   speedTile: boolean,
   dwarvenBrew: boolean,
   engineerShield?: string,
@@ -131,6 +133,8 @@ function createGenericDwarvesData(data: Partial<IHero>): {
     col: data.col ?? 0,
     priestessDebuff: data.priestessDebuff ?? false,
     attackTile: data.attackTile ?? false,
+    magicalResistanceTile: data.magicalResistanceTile ?? false,
+    physicalResistanceTile: data.physicalResistanceTile ?? false,
     speedTile: data.speedTile ?? false,
     dwarvenBrew: data.dwarvenBrew ?? false,
     engineerShield: data.engineerShield ?? undefined,
