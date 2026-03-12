@@ -44,45 +44,43 @@ export function createNewGameBoardState(): ITile[] {
 
   const crystalsTypeArray = [ETiles.CRYSTAL_SMALL, ETiles.CRYSTAL, ETiles.CRYSTAL_BIG];
 
-  let boardPosition = 0;
-  for (let row = 0; row < 5; row++) {
-    for (let col = 0; col < 9; col++) {
-      const { x, y } = centerPoints[boardPosition];
-      const specialTile = mapData.find((tile) => tile.col === col && tile.row === row);
+  for (const tileData of mapData) {
+    const { row, col, tileType } = tileData;
+    const boardPosition = getBoardPositionFromCoordinates(col, row);
+    const { x, y } = centerPoints[boardPosition];
 
-      let crystalData;
-      const isCrystalTile = specialTile?.tileType && crystalsTypeArray.includes(specialTile.tileType);
+    let crystalData;
+    const isCrystalTile = tileType && crystalsTypeArray.includes(tileType);
 
-      if (isCrystalTile) {
-        const crystalHp = getCrystalHp(specialTile.tileType);
+    if (isCrystalTile) {
+      const crystalHp = getCrystalHp(tileType);
 
-        crystalData = {
-          unitId: `crystal_${boardPosition}`,
-          belongsTo: col > 4 ? 2 : 1,
-          maxHealth: crystalHp,
-          currentHealth: crystalHp,
-          isDestroyed: false,
-          isLastCrystal: specialTile.tileType === ETiles.CRYSTAL_BIG ? true : false,
-          boardPosition,
-          row,
-          col,
-          debuffLevel: 0
-        };
-      }
-
-      const tile = createTileData({
+      crystalData = {
+        unitId: `crystal_${boardPosition}`,
+        belongsTo: col! > 4 ? 2 : 1,
+        maxHealth: crystalHp,
+        currentHealth: crystalHp,
+        isDestroyed: false,
+        isLastCrystal: tileType === ETiles.CRYSTAL_BIG ? true : false,
+        boardPosition,
         row,
         col,
-        x,
-        y,
-        boardPosition,
-        tileType: specialTile ? specialTile.tileType : ETiles.BASIC,
-        obstacle: isCrystalTile ? true : false,
-        ...isCrystalTile ? { crystal: crystalData } : {}
-      });
-      newBoard.push(tile);
-      boardPosition++;
-    }}
+        debuffLevel: 0
+      };
+    }
+
+    const tile = createTileData({
+      row,
+      col,
+      x,
+      y,
+      boardPosition,
+      tileType,
+      obstacle: isCrystalTile ? true : false,
+      ...isCrystalTile ? { crystal: crystalData } : {}
+    });
+    newBoard.push(tile);
+  }
 
   return newBoard;
 }
@@ -189,3 +187,8 @@ export const factionWinsKey = {
   [EFaction.DARK_ELVES]: { 'stats.elveslWins': 1 },
   [EFaction.DWARVES]: { 'stats.dwarvesWins': 1 }
 };
+
+function getBoardPositionFromCoordinates(col: number, row: number) {
+  const WIDTH = 9;
+  return row * WIDTH + col;
+}
