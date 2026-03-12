@@ -54,7 +54,6 @@ const index = async () => {
   // Ensure notification definitions exist before sending notifications
   await ensureNotificationDefinitionsExist();
 
-  app.use(passport.initialize());
   passport.use(localStrategy);
   passport.use(jwtStrategy);
 
