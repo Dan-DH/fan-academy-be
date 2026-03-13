@@ -39,6 +39,22 @@ const CrystalSchema = new Schema({
     type: Number,
     required: true
   },
+  physicalDamageResistance: {
+    type: Number,
+    required: true
+  },
+  basePhysicalDamageResistance: {
+    type: Number,
+    required: true
+  },
+  magicalDamageResistance: {
+    type: Number,
+    required: true
+  },
+  baseMagicalDamageResistance: {
+    type: Number,
+    required: true
+  },
   row: {
     type: Number,
     required: true
@@ -66,6 +82,10 @@ const CrystalSchema = new Schema({
   engineerShield: {
     type: String,
     required: false
+  },
+  paladinAura: {
+    type: Number,
+    required: true
   }
 }, { _id: false });
 
@@ -270,6 +290,10 @@ const HeroSchema = new Schema({
   shieldingAlly: {
     type: String,
     required: false
+  },
+  paladinAura: {
+    type: Number,
+    required: true
   }
 }, { _id: false });
 

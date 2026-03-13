@@ -115,7 +115,8 @@ function createGenericElvesData(data: Partial<IHero>): {
   engineerShield: undefined,
   shieldingAlly: undefined,
   annihilatorDebuff: boolean,
-  dwarvenBrew: boolean
+  dwarvenBrew: boolean,
+  paladinAura: number
 } {
   return {
     class: EClass.HERO,
@@ -142,7 +143,8 @@ function createGenericElvesData(data: Partial<IHero>): {
     engineerShield: undefined,
     shieldingAlly: undefined,
     annihilatorDebuff: data.annihilatorDebuff ?? false,
-    dwarvenBrew: data.dwarvenBrew ?? false
+    dwarvenBrew: data.dwarvenBrew ?? false,
+    paladinAura: data.paladinAura ?? 0
   };
 }
 

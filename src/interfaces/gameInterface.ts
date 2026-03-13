@@ -85,12 +85,13 @@ export interface IHero {
   attackTile: boolean;
   magicalResistanceTile: boolean;
   physicalResistanceTile: boolean;
-  manaVial?: boolean;
-  speedTile?: boolean;
-  dwarvenBrew?: boolean;
+  manaVial: boolean;
+  speedTile: boolean;
+  dwarvenBrew: boolean;
   engineerShield?: string;
-  annihilatorDebuff?: boolean;
+  annihilatorDebuff: boolean;
   shieldingAlly?: string;
+  paladinAura: number;
 }
 /**
  * Faction Interface
@@ -161,6 +162,11 @@ export interface ICrystal {
   row: number;
   col: number;
   engineerShield?: string;
+  paladinAura: number;
+  physicalDamageResistance: number;
+  magicalDamageResistance: number;
+  basePhysicalDamageResistance: number;
+  baseMagicalDamageResistance: number;
 }
 
 /**
@@ -175,7 +181,7 @@ export interface ITile {
   boardPosition: number;
   obstacle: boolean;
   hero?: IHero | undefined;
-  crystal?: ICrystal | undefined
+  crystal?: ICrystal | undefined;
 }
 
 /**

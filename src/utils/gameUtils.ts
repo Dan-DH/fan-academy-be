@@ -65,7 +65,12 @@ export function createNewGameBoardState(): ITile[] {
         boardPosition,
         row,
         col,
-        debuffLevel: 0
+        debuffLevel: 0,
+        paladinAura: 0,
+        physicalDamageResistance: 0,
+        magicalDamageResistance: 0,
+        basePhysicalDamageResistance: 0,
+        baseMagicalDamageResistance: 0
       };
     }
 

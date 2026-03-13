@@ -116,7 +116,8 @@ function createGenericCouncilData(data: Partial<IHero>): {
   shieldingAlly: undefined,
   manaVial: boolean,
   annihilatorDebuff: boolean,
-  dwarvenBrew: boolean
+  dwarvenBrew: boolean,
+  paladinAura: number
 } {
   return {
     class: EClass.HERO,
@@ -143,7 +144,8 @@ function createGenericCouncilData(data: Partial<IHero>): {
     shieldingAlly: undefined,
     manaVial: data.manaVial ?? false,
     annihilatorDebuff: data.annihilatorDebuff ?? false,
-    dwarvenBrew: data.dwarvenBrew ?? false
+    dwarvenBrew: data.dwarvenBrew ?? false,
+    paladinAura: data.paladinAura ?? 0
   };
 }
 

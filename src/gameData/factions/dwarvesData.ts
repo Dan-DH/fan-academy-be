@@ -115,7 +115,8 @@ function createGenericDwarvesData(data: Partial<IHero>): {
   engineerShield?: string,
   shieldingAlly?: string,
   annihilatorDebuff: boolean,
-  manaVial: boolean
+  manaVial: boolean,
+  paladinAura: number
 } {
   return {
     class: EClass.HERO,
@@ -140,7 +141,8 @@ function createGenericDwarvesData(data: Partial<IHero>): {
     engineerShield: data.engineerShield ?? undefined,
     shieldingAlly: data.shieldingAlly ?? undefined,
     annihilatorDebuff: data.annihilatorDebuff ?? false,
-    manaVial: data.manaVial ?? false
+    manaVial: data.manaVial ?? false,
+    paladinAura: data.paladinAura ?? 0
   };
 }
 
