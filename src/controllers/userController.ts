@@ -83,4 +83,14 @@ router.get('/emailconfirm', async (req: Request, res: Response, next: NextFuncti
   }
 });
 
+// PASSWORD RECOVERY
+router.post('/password-recovery', async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+  await UserService.passwordRecovery(req, next);
+});
+
+// PASSWORD RESET
+router.post('/password-reset', async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+  await UserService.passwordReset(req, next);
+});
+
 export default router;

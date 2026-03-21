@@ -256,10 +256,10 @@ const GameService = {
             'stats.totalWins': 1,
             ...factionWinsKey[winner.faction!]
           }
-        }
+        }, { runValidators: true }
       );
 
-      const updateLoser = await User.findByIdAndUpdate(loser.userData._id, { $inc: { 'stats.totalGames': 1 } });
+      const updateLoser = await User.findByIdAndUpdate(loser.userData._id, { $inc: { 'stats.totalGames': 1 } }, { runValidators: true });
 
       const emails = [];
       if (updateWinner?.preferences.emailNotifications) emails.push(winner.userData.email!);

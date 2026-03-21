@@ -119,5 +119,16 @@ export const EmailService = {
       templateId: 7,
       email
     });
+  },
+
+  async sendPasswordRecoveryEmail(email: string, username: string, recoveryCode: string): Promise<void> {
+    await this.sendEmail({
+      templateId: 2,
+      email,
+      params: {
+        username,
+        recoveryCode
+      }
+    });
   }
 };

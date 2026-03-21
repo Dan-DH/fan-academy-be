@@ -8,8 +8,15 @@ export interface IUserPreferences {
 export interface IUserStats {
   totalGames: number;
   totalWins: number;
-  councilWins: number;
-  elvesWins: number;
+  council: IUserFactionStats
+  elves: IUserFactionStats
+  dwarves: IUserFactionStats
+}
+
+export interface IUserFactionStats {
+  games: number,
+  wins: number,
+  rating: number
 }
 
 interface IUser extends Express.User {
@@ -22,6 +29,7 @@ interface IUser extends Express.User {
   stats: IUserStats;
   emailConfirmationLink: string;
   confirmedEmail: boolean;
+  recoveryCode?: string;
 }
 
 export default IUser;

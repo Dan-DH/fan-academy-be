@@ -10,7 +10,9 @@ import Game from "../models/gameModel";
 import User from '../models/userModel';
 import GameService from "../services/gameService";
 import { DiscordNotificationService } from "../services/discordNotificationService";
-import { factionWinsKey } from "../utils/gameUtils";
+import { factionGamesKey, factionStatsKey, factionWinsKey } from "../utils/gameUtils";
+import IUser from "../interfaces/userInterface";
+import { updateELORatings } from "../game/elo";
 
 export class GameRoom extends Room {
   connectedClients: Set<string> = new Set();
@@ -189,7 +191,10 @@ export class GameRoom extends Room {
       status: EGameStatus.FINISHED,
       lastPlayedAt: finishedAt,
       finishedAt
-    }, { new: true }).populate('players.userData', "username picture email confirmedEmail");
+    }, {
+      new: true,
+      runValidators: true
+    }).populate('players.userData', "username picture email confirmedEmail");
 
     if (!updatedGame) throw new CustomError(24);
 
@@ -207,27 +212,12 @@ export class GameRoom extends Room {
     // Update users stats
     const userWon = updatedGame.players.find(player => player.userData._id.toString() === winner) as unknown as IPopulatedPlayerData;
     const userLost = updatedGame.players.find(player => player.userData._id.toString() !== winner) as unknown as IPopulatedPlayerData;
-
     if (!userWon || !userLost) throw new CustomError(24);
-
-    const updateWinner = await User.findByIdAndUpdate(
-      userWon.userData._id,
-      {
-        $inc: {
-          'stats.totalGames': 1,
-          'stats.totalWins': 1,
-          ...factionWinsKey[userWon.faction!]
-        }
-      }
-    );
-
-    const updateLoser = await User.findByIdAndUpdate(userLost.userData._id, { $inc: { 'stats.totalGames': 1 } });
-
-    if (!updateWinner || !updateLoser) throw new CustomError(24);
+    const { updatedWinner, updatedLoser } = await this.updateUserStats(userWon, userLost);
 
     const emails = [];
-    if (updateWinner?.preferences.emailNotifications) emails.push(updateWinner.email);
-    if (updateLoser?.preferences.emailNotifications) emails.push(updateLoser.email);
+    if (updatedWinner?.preferences.emailNotifications) emails.push(updatedWinner.email);
+    if (updatedLoser?.preferences.emailNotifications) emails.push(updatedLoser.email);
 
     // Send gameover emails
     if (emails.length) {
@@ -253,7 +243,10 @@ export class GameRoom extends Room {
       turnNumber: message.turnNumber,
       activePlayer: message.newActivePlayer,
       lastPlayedAt
-    }, { new: true }).populate('players.userData', "username picture preferences email confirmedEmail turnEmailSent");
+    }, {
+      new: true,
+      runValidators: true
+    }).populate('players.userData', "username picture preferences email confirmedEmail turnEmailSent");
 
     if (!updatedGame) throw new CustomError(24);
 
@@ -272,7 +265,7 @@ export class GameRoom extends Room {
 
       if (!isOnline && acceptsEmails && confirmedEmail! && !turnEmailSent) {
         await EmailService.sendTurnNotificationEmail(userData.email!, userData.username!);
-        await User.findByIdAndUpdate(userData._id, { turnEmailSent: true });
+        await User.findByIdAndUpdate(userData._id, { turnEmailSent: true }, { runValidators: true });
       }
 
       try {
@@ -378,4 +371,46 @@ export class GameRoom extends Room {
   logConnectedClients(): void {
     console.log(`[Game] Connected clients: ${Array.from(this.connectedClients).join(", ")}`);
   }
+
+  async updateUserStats(userWon: IPopulatedPlayerData, userLost: IPopulatedPlayerData): Promise<{
+    updatedWinner: IUser,
+    updatedLoser: IUser
+  }> {
+    const winnerData = await User.findById(userWon.userData._id);
+    const loserData = await User.findById(userLost.userData._id);
+
+    const { winnerNewElo, loserNewElo } = updateELORatings(winnerData!, userWon.faction!, loserData!, userLost.faction!);
+
+    const winnerFactionPath = factionStatsKey[userWon.faction!];
+    const updatedWinner = await User.findByIdAndUpdate(
+      userWon.userData._id,
+      {
+        $set: { [winnerFactionPath]: winnerNewElo.rating },
+        $inc: {
+          'stats.totalGames': 1,
+          'stats.totalWins': 1,
+          ...factionGamesKey[userWon.faction!],
+          ...factionWinsKey[userWon.faction!]
+        }
+      },
+      { runValidators: true }
+    );
+
+    const loserFactionPath = factionStatsKey[userLost.faction!];
+    const updatedLoser = await User.findByIdAndUpdate(
+      userLost.userData._id,
+      {
+        $set: { [loserFactionPath]: loserNewElo.rating },
+        $inc: {
+          'stats.totalGames': 1,
+          ...factionGamesKey[userLost.faction!]
+        }
+      }, { runValidators: true });
+
+    if (!updatedWinner || !updatedLoser) throw new CustomError(24);
+    return {
+      updatedWinner,
+      updatedLoser
+    };
+  };
 }

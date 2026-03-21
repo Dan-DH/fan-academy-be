@@ -15,7 +15,7 @@ export class Lobby extends Room {
     this.connectedClients.add(client);
     console.log(`[Lobby ${this.roomId}] Client joined: ${(client as any).userId}`);
     this.logConnectedClients();
-    await User.findByIdAndUpdate(options.userId, { turnEmailSent: false });
+    await User.findByIdAndUpdate(options.userId, { turnEmailSent: false }, { runValidators: true });
   }
 
   onCreate(_options: { userId: string }): void {

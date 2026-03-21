@@ -1,8 +1,9 @@
 import { EFaction, ETiles } from "../enums/game.enums";
-import { createCouncilFactionData } from "../gameData/factions/councilData";
-import { createElvesFactionData } from "../gameData/factions/elvesData";
-import { createDwarvesFactionData } from "../gameData/factions/dwarvesData";
-import { createTileData } from "../gameData/tileData";
+import { createCouncilFactionData } from "../game/factions/councilData";
+import { createDwarvesFactionData } from "../game/factions/dwarvesData";
+import { createElvesFactionData } from "../game/factions/elvesData";
+import { createTileData } from "../game/tileData";
+
 import { ICoordinates, IFaction, IHero, IItem, ITile } from "../interfaces/gameInterface";
 import { mapTemplates } from "./mapTemplates";
 
@@ -188,9 +189,27 @@ export function shuffleDeck(unitsDeck: IHero[], itemsDeck: IItem[]) {
 }
 
 export const factionWinsKey = {
-  [EFaction.COUNCIL]: { 'stats.councilWins': 1 },
-  [EFaction.DARK_ELVES]: { 'stats.elveslWins': 1 },
-  [EFaction.DWARVES]: { 'stats.dwarvesWins': 1 }
+  [EFaction.COUNCIL]: { 'stats.council.wins': 1 },
+  [EFaction.DARK_ELVES]: { 'stats.elves.wins': 1 },
+  [EFaction.DWARVES]: { 'stats.dwarves.wins': 1 }
+};
+
+export const factionGamesKey = {
+  [EFaction.COUNCIL]: { 'stats.council.games': 1 },
+  [EFaction.DARK_ELVES]: { 'stats.elves.games': 1 },
+  [EFaction.DWARVES]: { 'stats.dwarves.games': 1 }
+};
+
+export const factionStatsKey = {
+  [EFaction.COUNCIL]: 'stats.council.rating',
+  [EFaction.DARK_ELVES]: 'stats.elves.rating',
+  [EFaction.DWARVES]: 'stats.dwarves.rating'
+};
+
+export const factionLowerCaseKey = {
+  [EFaction.COUNCIL]: 'council',
+  [EFaction.DARK_ELVES]: 'elves',
+  [EFaction.DWARVES]: 'dwarves'
 };
 
 function getBoardPositionFromCoordinates(col: number, row: number) {

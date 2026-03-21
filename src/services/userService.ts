@@ -9,7 +9,7 @@ import IUser from "../interfaces/userInterface";
 import Game from "../models/gameModel";
 import User from "../models/userModel";
 import { generateToken } from '../middleware/jwt';
-import { getConfirmationLink } from '../utils/tokenGeneration';
+import { generateConfirmationLink, generateRecoveryCode } from '../utils/tokenGeneration';
 import { EmailService } from '../emails/emailService';
 import { DiscordNotificationService } from './discordNotificationService';
 
@@ -26,7 +26,7 @@ const UserService = {
     if (userAlreadyExists.length) throw new CustomError(12);
 
     // If the user doesn't exist, create a new user with an encrypted password
-    const emailConfirmationLink = getConfirmationLink();
+    const emailConfirmationLink = generateConfirmationLink();
     try {
       const hashedPassword = await hash(password, 10);
       const newUser = new User({
@@ -76,7 +76,7 @@ const UserService = {
       const userMatch = await User.findOneAndUpdate({ emailConfirmationLink: token }, {
         emailConfirmationLink: null,
         confirmedEmail: true
-      });
+      }, { runValidators: true });
       if (userMatch) return true;
     } catch (err) {
       next(err);
@@ -110,7 +110,10 @@ const UserService = {
     if (chat !== undefined) updateFields['preferences.chat'] = chat;
     if (sound !== undefined) updateFields['preferences.sound'] = sound;
 
-    const result = await User.findByIdAndUpdate(user._id, updateFields, { new: true });
+    const result = await User.findByIdAndUpdate(user._id, updateFields, {
+      new: true,
+      runValidators: true
+    });
 
     if (!result) throw new CustomError(41);
 
@@ -206,6 +209,53 @@ const UserService = {
     if (!result) { throw new CustomError(40); }
 
     return res.send(result);
+  },
+
+  async passwordRecovery(req: Request, next: NextFunction): Promise<void> {
+    try {
+      const email = req.body.email.trim();
+
+      const user = await User.findOne({
+        email,
+        confirmedEmail: true
+      }, {
+        username: 1,
+        email: 1
+      });
+      if (!user) { throw new CustomError(40); }
+
+      const recoveryCode = generateRecoveryCode();
+
+      user.recoveryCode = recoveryCode;
+      await user.save();
+
+      await EmailService.sendPasswordRecoveryEmail(email, user.username, recoveryCode);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async passwordReset(req: Request, next: NextFunction): Promise<void> {
+    try {
+      const recoveryCode = req.body.recoveryCode.trim();
+      const password = req.body.password.trim();
+
+      if (!recoveryCode || recoveryCode.length !== 6 || !password) throw new CustomError(31);
+
+      const hashedPassword = await hash(password, 10);
+
+      const user = await User.findOneAndUpdate(
+        { recoveryCode },
+        {
+          $set: { password: hashedPassword },
+          $unset: { recoveryCode: "" }
+        },
+        { runValidators: true }
+      );
+      if (!user) { throw new CustomError(40); }
+    } catch (error) {
+      next(error);
+    }
   }
 };
 

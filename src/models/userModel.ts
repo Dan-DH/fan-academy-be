@@ -19,6 +19,24 @@ const PreferencesSchema = new Schema({
   }
 });
 
+const FactionStatsSchema = new Schema({
+  games: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  wins: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  rating: {
+    type: Number,
+    required: true,
+    default: 1500
+  }
+});
+
 const StatsSchema = new Schema({
   totalGames: {
     type: Number,
@@ -30,20 +48,17 @@ const StatsSchema = new Schema({
     required: true,
     default: 0
   },
-  councilWins: {
-    type: Number,
-    required: true,
-    default: 0
+  council: {
+    type: FactionStatsSchema,
+    required: true
   },
-  elvesWins: {
-    type: Number,
-    required: true,
-    default: 0
+  elves: {
+    type: FactionStatsSchema,
+    required: true
   },
-  dwarvesWins: {
-    type: Number,
-    required: true,
-    default: 0
+  dwarves: {
+    type: FactionStatsSchema,
+    required: true
   }
 });
 
@@ -79,6 +94,10 @@ const UserSchema = new Schema({
     type: Boolean,
     required: true,
     default: false
+  },
+  recoveryCode: {
+    type: String,
+    required: false
   }
 });
 
