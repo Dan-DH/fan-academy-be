@@ -37,6 +37,21 @@ const FactionStatsSchema = new Schema({
   }
 });
 
+const FactionsSchema = new Schema({
+  council: {
+    type: FactionStatsSchema,
+    required: true
+  },
+  elves: {
+    type: FactionStatsSchema,
+    required: true
+  },
+  dwarves: {
+    type: FactionStatsSchema,
+    required: true
+  }
+});
+
 const StatsSchema = new Schema({
   totalGames: {
     type: Number,
@@ -48,16 +63,8 @@ const StatsSchema = new Schema({
     required: true,
     default: 0
   },
-  council: {
-    type: FactionStatsSchema,
-    required: true
-  },
-  elves: {
-    type: FactionStatsSchema,
-    required: true
-  },
-  dwarves: {
-    type: FactionStatsSchema,
+  factions: {
+    type: FactionsSchema,
     required: true
   }
 });

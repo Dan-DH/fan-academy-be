@@ -4,15 +4,17 @@ import { CustomError } from "../classes/customError";
 import IUser from "../interfaces/userInterface";
 import { generateToken, isAuthenticated } from "../middleware/jwt";
 import UserService from "../services/userService";
+import { ELeaderboardEnum } from "../enums/leaderboard.enums";
 
 const router = Router();
 
 // GET USERS
 router.get('/leaderboard', isAuthenticated, async (req: Request, res: Response) => {
+  const boardType = req.query.type as ELeaderboardEnum;
   const rawPage = parseInt(req.query.page as string) || 1;
   const page = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
 
-  const result = await UserService.getLeaderboard(page);
+  const result = await UserService.getLeaderboard(boardType, page);
   res.send(result);
 });
 

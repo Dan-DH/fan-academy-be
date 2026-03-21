@@ -1,4 +1,6 @@
+import { SortOrder } from "mongoose";
 import { EFaction, ETiles } from "../enums/game.enums";
+import { ELeaderboardEnum } from "../enums/leaderboard.enums";
 import { createCouncilFactionData } from "../game/factions/councilData";
 import { createDwarvesFactionData } from "../game/factions/dwarvesData";
 import { createElvesFactionData } from "../game/factions/elvesData";
@@ -189,28 +191,56 @@ export function shuffleDeck(unitsDeck: IHero[], itemsDeck: IItem[]) {
 }
 
 export const factionWinsKey = {
-  [EFaction.COUNCIL]: { 'stats.council.wins': 1 },
-  [EFaction.DARK_ELVES]: { 'stats.elves.wins': 1 },
-  [EFaction.DWARVES]: { 'stats.dwarves.wins': 1 }
+  [EFaction.COUNCIL]: { 'stats.factions.council.wins': 1 },
+  [EFaction.DARK_ELVES]: { 'stats.factions.elves.wins': 1 },
+  [EFaction.DWARVES]: { 'stats.factions.dwarves.wins': 1 }
 };
 
 export const factionGamesKey = {
-  [EFaction.COUNCIL]: { 'stats.council.games': 1 },
-  [EFaction.DARK_ELVES]: { 'stats.elves.games': 1 },
-  [EFaction.DWARVES]: { 'stats.dwarves.games': 1 }
+  [EFaction.COUNCIL]: { 'stats.factions.council.games': 1 },
+  [EFaction.DARK_ELVES]: { 'stats.factions.elves.games': 1 },
+  [EFaction.DWARVES]: { 'stats.factions.dwarves.games': 1 }
 };
 
 export const factionStatsKey = {
-  [EFaction.COUNCIL]: 'stats.council.rating',
-  [EFaction.DARK_ELVES]: 'stats.elves.rating',
-  [EFaction.DWARVES]: 'stats.dwarves.rating'
+  [EFaction.COUNCIL]: 'stats.factions.council.rating',
+  [EFaction.DARK_ELVES]: 'stats.factions.elves.rating',
+  [EFaction.DWARVES]: 'stats.factions.dwarves.rating'
 };
 
-export const factionLowerCaseKey = {
-  [EFaction.COUNCIL]: 'council',
-  [EFaction.DARK_ELVES]: 'elves',
-  [EFaction.DWARVES]: 'dwarves'
-};
+export function mapFactionsEnumToLowerCase(faction: EFaction): string {
+  const factionMap = {
+    [EFaction.COUNCIL]: 'council',
+    [EFaction.DARK_ELVES]: 'elves',
+    [EFaction.DWARVES]: 'dwarves'
+  };
+
+  return factionMap[faction];
+}
+
+export function getProfilePaginationSortOrder(boardType: ELeaderboardEnum) {
+  const sortTypeMap = {
+    [ELeaderboardEnum.MAIN]: {
+      'stats.totalWins': -1,
+      'stats.totalGames': 1,
+      _id: 1
+    },
+    [ELeaderboardEnum.COUNCIL]: {
+      'stats.factions.council.rating': -1,
+      _id: 1
+    },
+    [ELeaderboardEnum.ELVES]: {
+      'stats.factions.elves.rating': -1,
+      _id: 1
+    },
+    [ELeaderboardEnum.DWARVES]: {
+      'stats.factions.dwarves.rating': -1,
+      _id: 1
+    }
+  };
+
+  return (sortTypeMap[boardType] ?? { _id: 1 }) as { [key: string]: SortOrder };
+}
 
 function getBoardPositionFromCoordinates(col: number, row: number) {
   const WIDTH = 9;

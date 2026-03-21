@@ -12,6 +12,8 @@ import { generateToken } from '../middleware/jwt';
 import { generateConfirmationLink, generateRecoveryCode } from '../utils/tokenGeneration';
 import { EmailService } from '../emails/emailService';
 import { DiscordNotificationService } from './discordNotificationService';
+import { ELeaderboardEnum } from '../enums/leaderboard.enums';
+import { getProfilePaginationSortOrder } from '../utils/gameUtils';
 
 const UserService = {
   async signup(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -174,7 +176,7 @@ const UserService = {
     }
   },
 
-  async getLeaderboard(page: number): Promise<{
+  async getLeaderboard(boardType: ELeaderboardEnum,  page: number): Promise<{
     players: IUser[],
     totalPages: number,
     currentPage: number
@@ -182,15 +184,13 @@ const UserService = {
     const limit = 12;
     const skip = (page - 1) * limit;
 
+    const sortType = getProfilePaginationSortOrder(boardType);
+
     const players = await User.find({}, {
       username: 1,
       picture: 1,
       stats: 1
-    }).sort({
-      'stats.totalWins': -1,
-      'stats.totalGames': 1,
-      _id: 1
-    }).skip(skip).limit(limit);
+    }).sort(sortType).skip(skip).limit(limit);
 
     const totalPlayers = await User.countDocuments();
 

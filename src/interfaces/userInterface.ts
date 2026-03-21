@@ -8,6 +8,10 @@ export interface IUserPreferences {
 export interface IUserStats {
   totalGames: number;
   totalWins: number;
+  factions: IUserFactions;
+}
+
+export interface IUserFactions {
   council: IUserFactionStats
   elves: IUserFactionStats
   dwarves: IUserFactionStats

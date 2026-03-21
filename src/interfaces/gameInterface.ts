@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import { EActionClass, EActionType, EAttackType, EClass, EFaction, EGameStatus, EHeroes, EItems, ETiles, EWinConditions } from "../enums/game.enums";
-import { IUserStats, IUserPreferences } from "./userInterface";
+import { IUserFactionStats, IUserPreferences } from "./userInterface";
 
 /**
  * Coordinates Interface
@@ -123,7 +123,7 @@ export interface IPopulatedUserData {
   username?: string;
   picture?: string;
   email?: string;
-  stats?: IUserStats;
+  stats?: IUserFactionStats;
   preferences?: IUserPreferences;
   confirmedEmail?: boolean;
   turnEmailSent?: boolean
