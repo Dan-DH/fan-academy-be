@@ -106,7 +106,7 @@ const GameService = {
         },
         ...opponentId ? [{ userData: new Types.ObjectId(opponentId) }] : []
       ],
-      turnNumber: 0,
+      turnNumber: 1,
       status: opponentId ? EGameStatus.CHALLENGE : EGameStatus.SEARCHING,
       createdAt: new Date(),
       lastPlayedAt: new Date(),
