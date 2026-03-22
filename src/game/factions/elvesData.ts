@@ -149,7 +149,7 @@ function createGenericElvesData(data: Partial<IHero>): {
 }
 
 export function createElvesImpalerData(data: Partial<IHero>): IHero {
-  const baseHealth = 800;
+  const baseHealth = 825;
   const basePower = 300;
   const physicalDamageResistance = 0;
   const magicalDamageResistance = 0;
