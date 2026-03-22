@@ -32,6 +32,7 @@ export enum EActionType {
   MOVE = 'move',
   ATTACK = 'attack',
   HEAL = 'heal',
+  BUFF = 'buff',
   SPAWN = 'spawn',
   SPAWN_PHANTOM = 'phantom',
   USE = 'use',
