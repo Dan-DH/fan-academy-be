@@ -19,6 +19,70 @@ const PreferencesSchema = new Schema({
   }
 });
 
+const OpponentFactionWinStats = new Schema({
+  crystal: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  hero: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  timeout: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  conceded: {
+    type: Number,
+    required: true,
+    default: 0
+  }
+});
+
+const OpponentFactiontats = new Schema({
+  games: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  totalWins: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  totalLoses: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  wins: {
+    type: OpponentFactionWinStats,
+    required: true
+  },
+  loses: {
+    type: OpponentFactionWinStats,
+    required: true
+  }
+});
+
+const OpponentFactions = new Schema({
+  council: {
+    type: OpponentFactiontats,
+    required: true
+  },
+  elves: {
+    type: OpponentFactiontats,
+    required: true
+  },
+  dwarves: {
+    type: OpponentFactiontats,
+    required: true
+  }
+});
+
 const FactionStatsSchema = new Schema({
   games: {
     type: Number,
@@ -30,10 +94,19 @@ const FactionStatsSchema = new Schema({
     required: true,
     default: 0
   },
+  loses: {
+    type: Number,
+    required: true,
+    default: 0
+  },
   rating: {
     type: Number,
     required: true,
     default: 1500
+  },
+  opponentFactions: {
+    type: OpponentFactions,
+    required: true
   }
 });
 
@@ -59,6 +132,11 @@ const StatsSchema = new Schema({
     default: 0
   },
   totalWins: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  totalLoses: {
     type: Number,
     required: true,
     default: 0

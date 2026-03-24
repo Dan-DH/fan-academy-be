@@ -2,6 +2,7 @@ import * as Brevo from '@getbrevo/brevo';
 import { EWinConditions } from '../enums/game.enums';
 import { IPopulatedPlayerData } from '../interfaces/gameInterface';
 import { CustomError } from '../classes/customError';
+import { mapFactionsForEMail, mapWinConditionsForEMail } from './emaliServiceUtils';
 
 const apiInstance = new Brevo.TransactionalEmailsApi();
 
@@ -99,10 +100,10 @@ export const EmailService = {
       email: emails,
       params: {
         user1: winner.userData.username,
-        user1Faction: winner.faction,
+        user1Faction: mapFactionsForEMail(winner.faction!),
         user2: loser.userData.username,
-        user2Faction: loser.faction,
-        winCondition
+        user2Faction: mapFactionsForEMail(loser.faction!),
+        winCondition: mapWinConditionsForEMail(winCondition)
       }
     });
   },

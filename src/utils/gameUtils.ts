@@ -1,13 +1,20 @@
 import { SortOrder } from "mongoose";
-import { EFaction, ETiles } from "../enums/game.enums";
+import { EFaction, EGameStatus, ETiles, EWinConditions } from "../enums/game.enums";
 import { ELeaderboardEnum } from "../enums/leaderboard.enums";
 import { createCouncilFactionData } from "../game/factions/councilData";
 import { createDwarvesFactionData } from "../game/factions/dwarvesData";
 import { createElvesFactionData } from "../game/factions/elvesData";
 import { createTileData } from "../game/tileData";
+import Game from "../models/gameModel";
 
-import { ICoordinates, IFaction, IHero, IItem, ITile } from "../interfaces/gameInterface";
+import { ICoordinates, IFaction, IHero, IItem, IPlayerData, IPopulatedPlayerData, ITile, ITurnMessage } from "../interfaces/gameInterface";
 import { mapTemplates } from "./mapTemplates";
+import { CustomError } from "../classes/customError";
+import { EmailService } from "../emails/emailService";
+import { DiscordNotificationService } from "../services/discordNotificationService";
+import IUser from "../interfaces/userInterface";
+import { updateELORatings } from "../game/elo";
+import User from "../models/userModel";
 
 /**
  * Creates a starting state for a given faction, randomizing the assets in deck and dealing a starting hand
@@ -190,22 +197,10 @@ export function shuffleDeck(unitsDeck: IHero[], itemsDeck: IItem[]) {
   return mappedDeck;
 }
 
-export const factionWinsKey = {
+export const factionWinKey = {
   [EFaction.COUNCIL]: { 'stats.factions.council.wins': 1 },
   [EFaction.DARK_ELVES]: { 'stats.factions.elves.wins': 1 },
   [EFaction.DWARVES]: { 'stats.factions.dwarves.wins': 1 }
-};
-
-export const factionGamesKey = {
-  [EFaction.COUNCIL]: { 'stats.factions.council.games': 1 },
-  [EFaction.DARK_ELVES]: { 'stats.factions.elves.games': 1 },
-  [EFaction.DWARVES]: { 'stats.factions.dwarves.games': 1 }
-};
-
-export const factionStatsKey = {
-  [EFaction.COUNCIL]: 'stats.factions.council.rating',
-  [EFaction.DARK_ELVES]: 'stats.factions.elves.rating',
-  [EFaction.DWARVES]: 'stats.factions.dwarves.rating'
 };
 
 export function mapFactionsEnumToLowerCase(faction: EFaction): string {
@@ -246,3 +241,150 @@ function getBoardPositionFromCoordinates(col: number, row: number) {
   const WIDTH = 9;
   return row * WIDTH + col;
 }
+
+export async function handleGameOverUtil(message: ITurnMessage) {
+  const finishedAt = new Date();
+  const { winner, winCondition } = message.gameOver!;
+
+  const updatedGame = await Game.findByIdAndUpdate(message._id, {
+    previousTurn: message.currentTurn,
+    turnNumber: message.turnNumber,
+    activePlayer: message.newActivePlayer,
+    gameOver: message.gameOver,
+    status: EGameStatus.FINISHED,
+    lastPlayedAt: finishedAt,
+    finishedAt
+  }, {
+    new: true,
+    runValidators: true
+  }).populate('players.userData', "username picture email confirmedEmail");
+
+  if (!updatedGame) throw new CustomError(24);
+
+  // Retrieve user ids and publish the update to the users' game lists
+  const userIds = updatedGame.players.map((player: IPlayerData) => player.userData._id.toString());
+
+  // Update users stats
+  const userWon = updatedGame.players.find(player => player.userData._id.toString() === winner) as unknown as IPopulatedPlayerData;
+  const userLost = updatedGame.players.find(player => player.userData._id.toString() !== winner) as unknown as IPopulatedPlayerData;
+  if (!userWon || !userLost) throw new CustomError(24);
+  const { updatedWinner, updatedLoser } = await updateUserStats(userWon, userLost, winCondition);
+
+  const emails = [];
+  if (updatedWinner?.preferences.emailNotifications) emails.push(updatedWinner.email);
+  if (updatedLoser?.preferences.emailNotifications) emails.push(updatedLoser.email);
+
+  // Send gameover emails
+  if (emails.length) {
+    await EmailService.sendGameOverEmail({
+      winner: userWon,
+      loser: userLost,
+      emails
+    }, winCondition);
+  }
+
+  try {
+    if (userWon?.userData?.username) await DiscordNotificationService.sendGameFinished(userWon.userData.username);
+    if (userLost?.userData?.username) await DiscordNotificationService.sendGameFinished(userLost.userData.username);
+  } catch (err) {
+    console.error('Failed to send Discord game finished notification:', err);
+  }
+
+  return {
+    gameId: message._id,
+    previousTurn: message.currentTurn,
+    userIds,
+    turnNumber: message.turnNumber,
+    lastPlayedAt: finishedAt,
+    gameOver: message.gameOver
+  };
+}
+
+export async function updateUserStats(userWon: IPopulatedPlayerData, userLost: IPopulatedPlayerData, winCondition: EWinConditions): Promise<{
+  updatedWinner: IUser,
+  updatedLoser: IUser
+}> {
+  const winnerData = await User.findById(userWon.userData._id);
+  const loserData = await User.findById(userLost.userData._id);
+
+  const { winnerNewElo, loserNewElo } = updateELORatings(winnerData!, userWon.faction!, loserData!, userLost.faction!);
+
+  console.log('winnerNewElo', winnerNewElo);
+
+  const addWinnerNewRating = { [ `stats.factions.${userWon.faction}.rating`]: winnerNewElo.rating };
+  const addwinnerFactionTotalGames = { [`stats.factions.${userWon.faction}.games`]: 1 };
+  const addwinnerFactionTotalWins = { [`stats.factions.${userWon.faction}.wins`]: 1 };
+  const addWinnerFactionGame = { [`stats.factions.${userWon.faction!}.opponentFactions.${userLost.faction!}.games`]: 1 };
+  const addWinnerFactionVictory = { [`stats.factions.${userWon.faction!}.opponentFactions.${userLost.faction!}.totalWins`]: 1 };
+  const addWinnerFactionVictoryType = { [`stats.factions.${userWon.faction!}.opponentFactions.${userLost.faction!}.wins.${winCondition}`]: 1 };
+  const updatedWinner = await User.findByIdAndUpdate(
+    userWon.userData._id,
+    {
+      $set: { ...addWinnerNewRating },
+      $inc: {
+        'stats.totalGames': 1,
+        'stats.totalWins': 1,
+        ...addwinnerFactionTotalGames,
+        ...addwinnerFactionTotalWins,
+        ...addWinnerFactionGame,
+        ...addWinnerFactionVictory,
+        ...addWinnerFactionVictoryType
+      }
+    },
+    { runValidators: true }
+  );
+
+  console.log('query', {
+    $set: { ...addWinnerNewRating },
+    $inc: {
+      'stats.totalGames': 1,
+      'stats.totalWins': 1,
+      ...addwinnerFactionTotalGames,
+      ...addwinnerFactionTotalWins,
+      ...addWinnerFactionGame,
+      ...addWinnerFactionVictory,
+      ...addWinnerFactionVictoryType
+    }
+  });
+
+  const addLoserNewRating = { [ `stats.factions.${userLost.faction}.rating`]: loserNewElo.rating };
+  const addLoserFactionTotalGames = { [`stats.factions.${userLost.faction}.games`]: 1 };
+  const addLoserFactionTotalLoses = { [`stats.factions.${userLost.faction}.loses`]: 1 };
+  const addLoserFactionGame = { [`stats.factions.${userLost.faction!}.opponentFactions.${userWon.faction!}.games`]: 1 };
+  const addLoserFactionLossType = { [`stats.factions.${userLost.faction!}.opponentFactions.${userWon.faction!}.loses.${winCondition}`]: 1 };
+  const addLoserFactionLoss = { [`stats.factions.${userLost.faction!}.opponentFactions.${userWon.faction!}.totalLoses`]: 1 };
+  const updatedLoser = await User.findByIdAndUpdate(
+    userLost.userData._id,
+    {
+      $set: { ...addLoserNewRating },
+      $inc: {
+        'stats.totalGames': 1,
+        'stats.totalLoses': 1,
+        ...addLoserFactionTotalGames,
+        ...addLoserFactionTotalLoses,
+        ...addLoserFactionGame,
+        ...addLoserFactionLoss,
+        ...addLoserFactionLossType
+      }
+    }, { runValidators: true }
+  );
+
+  console.log('loser query', {
+    $set: { ...addLoserNewRating },
+    $inc: {
+      'stats.totalGames': 1,
+      'stats.totalLoses': 1,
+      ...addLoserFactionTotalGames,
+      ...addLoserFactionTotalLoses,
+      ...addLoserFactionGame,
+      ...addLoserFactionLoss,
+      ...addLoserFactionLossType
+    }
+  });
+
+  if (!updatedWinner || !updatedLoser) throw new CustomError(24);
+  return {
+    updatedWinner,
+    updatedLoser
+  };
+};

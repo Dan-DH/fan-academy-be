@@ -20,7 +20,29 @@ export interface IUserFactions {
 export interface IUserFactionStats {
   games: number,
   wins: number,
-  rating: number
+  rating: number,
+  opponentFactions: IUserOpponentFactions
+}
+
+export interface IUserOpponentFactions {
+  council: IUserOpponentFactionStats,
+  elves: IUserOpponentFactionStats,
+  dwarves: IUserOpponentFactionStats
+}
+
+export interface IUserOpponentFactionStats {
+  games: number,
+  totalWins: number,
+  totalLoses: number,
+  wins: IUserOpponentFactionWinStats,
+  loses: IUserOpponentFactionWinStats
+}
+
+export interface IUserOpponentFactionWinStats {
+  crystal: number,
+  hero: number,
+  timeout: number,
+  conceded: number
 }
 
 interface IUser extends Express.User {

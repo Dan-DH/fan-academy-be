@@ -16,16 +16,16 @@ export enum EGameTermination {
 }
 
 export enum EWinConditions {
-  CRYSTAL = 'Crystal victory',
-  UNITS = 'Hero victory',
-  TIME = 'Timeout',
-  CONCEDED = 'Game conceded'
+  CRYSTAL = 'crystal',
+  HERO = 'hero',
+  TIMEOUT = 'timeout',
+  CONCEDED = 'conceded'
 };
 
 export enum EFaction {
-  COUNCIL = 'Council',
-  DARK_ELVES = 'Dark Elves',
-  DWARVES = 'Dwarves'
+  COUNCIL = 'council',
+  DARK_ELVES = 'elves',
+  DWARVES = 'dwarves'
 }
 
 export enum EActionType {
@@ -38,7 +38,7 @@ export enum EActionType {
   USE = 'use',
   SHUFFLE = 'shuffle',
   TELEPORT = 'teleport',
-
+  CONCEDE = 'concede',
   // Automated actions
   DRAW = 'draw',
   PASS = 'pass',

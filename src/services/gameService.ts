@@ -5,9 +5,8 @@ import { EFaction, EGameStatus, EWinConditions } from "../enums/game.enums";
 import IGame, { IPlayerData, IPopulatedPlayerData, IPopulatedUserData } from "../interfaces/gameInterface";
 import ChatLog from "../models/chatlogModel";
 import Game from "../models/gameModel";
-import { createNewGameBoardState, createNewGameFactionState, factionWinsKey } from "../utils/gameUtils";
+import { createNewGameBoardState, createNewGameFactionState, updateUserStats } from "../utils/gameUtils";
 import { EmailService } from "../emails/emailService";
-import User from "../models/userModel";
 import { DiscordNotificationService } from "./discordNotificationService";
 
 const GameService = {
@@ -17,11 +16,11 @@ const GameService = {
     console.log('userId', userId);
 
     // Check for games where a player has not played for over a week and update them before returning the game list to the player
-    const twoWeeksAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const timedOutGames = await Game.find({
       'players.userData': userObjectId,
       status: EGameStatus.PLAYING,
-      lastPlayedAt: { $lt: twoWeeksAgo }
+      lastPlayedAt: { $lt: oneWeekAgo }
     }).populate('players.userData', 'username email');
 
     if (timedOutGames) await this.handleTimedOutGames(timedOutGames);
@@ -248,22 +247,11 @@ const GameService = {
       const winner = game.players.find(player => player.userData._id.toString() !== game.activePlayer?.toString()) as IPopulatedPlayerData;
       const loser = game.players.find(player => player.userData._id.toString() === game.activePlayer?.toString()) as IPopulatedPlayerData;
 
-      const updateWinner = await User.findByIdAndUpdate(
-        winner.userData._id,
-        {
-          $inc: {
-            'stats.totalGames': 1,
-            'stats.totalWins': 1,
-            ...factionWinsKey[winner.faction!]
-          }
-        }, { runValidators: true }
-      );
-
-      const updateLoser = await User.findByIdAndUpdate(loser.userData._id, { $inc: { 'stats.totalGames': 1 } }, { runValidators: true });
+      const { updatedWinner, updatedLoser } = await updateUserStats(winner, loser, EWinConditions.TIMEOUT);
 
       const emails = [];
-      if (updateWinner?.preferences.emailNotifications) emails.push(winner.userData.email!);
-      if (updateLoser?.preferences.emailNotifications) emails.push(loser.userData.email!);
+      if (updatedWinner?.preferences.emailNotifications) emails.push(winner.userData.email!);
+      if (updatedLoser?.preferences.emailNotifications) emails.push(loser.userData.email!);
 
       if (emails.length) {
         userInfoForEmails.push({
@@ -280,7 +268,7 @@ const GameService = {
             $set: {
               status: EGameStatus.FINISHED,
               gameOver: {
-                winCondition: EWinConditions.TIME,
+                winCondition: EWinConditions.TIMEOUT,
                 winner: winner?.userData._id?.toString()
               },
               finishedAt: new Date()
@@ -293,7 +281,7 @@ const GameService = {
     if (gamesToUpdate.length > 0) await Game.bulkWrite(gamesToUpdate);
 
     for (let i = 0; i < userInfoForEmails.length; i++) {
-      await EmailService.sendGameOverEmail(userInfoForEmails[i], EWinConditions.TIME);
+      await EmailService.sendGameOverEmail(userInfoForEmails[i], EWinConditions.TIMEOUT);
     }
   }
 

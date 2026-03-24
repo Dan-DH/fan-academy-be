@@ -2,17 +2,15 @@ import { JWT, JwtPayload } from "@colyseus/auth";
 import { AuthContext, Client, matchMaker, Room } from "@colyseus/core";
 import { CustomError } from "../classes/customError";
 import { EmailService } from "../emails/emailService";
-import { EFaction, EGameStatus } from "../enums/game.enums";
-import { IPlayerData, IPopulatedPlayerData, IPopulatedUserData, ITurnMessage } from "../interfaces/gameInterface";
+import { EFaction } from "../enums/game.enums";
+import { IPlayerData, IPopulatedUserData, ITurnMessage } from "../interfaces/gameInterface";
 import { sanitize } from "../middleware/sanitizeInput";
 import ChatLog from "../models/chatlogModel";
 import Game from "../models/gameModel";
 import User from '../models/userModel';
 import GameService from "../services/gameService";
 import { DiscordNotificationService } from "../services/discordNotificationService";
-import { factionGamesKey, factionStatsKey, factionWinsKey } from "../utils/gameUtils";
-import IUser from "../interfaces/userInterface";
-import { updateELORatings } from "../game/elo";
+import { handleGameOverUtil } from "../utils/gameUtils";
 
 export class GameRoom extends Room {
   connectedClients: Set<string> = new Set();
@@ -180,60 +178,8 @@ export class GameRoom extends Room {
   }
 
   async handleGameOver(message: ITurnMessage): Promise<void> {
-    const finishedAt = new Date();
-    const { winner, winCondition } = message.gameOver!;
-
-    const updatedGame = await Game.findByIdAndUpdate(message._id, {
-      previousTurn: message.currentTurn,
-      turnNumber: message.turnNumber,
-      activePlayer: message.newActivePlayer,
-      gameOver: message.gameOver,
-      status: EGameStatus.FINISHED,
-      lastPlayedAt: finishedAt,
-      finishedAt
-    }, {
-      new: true,
-      runValidators: true
-    }).populate('players.userData', "username picture email confirmedEmail");
-
-    if (!updatedGame) throw new CustomError(24);
-
-    // Retrieve user ids and publish update the users' game lists
-    const userIds = updatedGame.players.map((player: IPlayerData) => player.userData._id.toString());
-    this.presence.publish("gameOverPresence", {
-      gameId: message._id,
-      previousTurn: message.currentTurn,
-      userIds,
-      turnNumber: message.turnNumber,
-      lastPlayedAt: finishedAt,
-      gameOver: message.gameOver
-    });
-
-    // Update users stats
-    const userWon = updatedGame.players.find(player => player.userData._id.toString() === winner) as unknown as IPopulatedPlayerData;
-    const userLost = updatedGame.players.find(player => player.userData._id.toString() !== winner) as unknown as IPopulatedPlayerData;
-    if (!userWon || !userLost) throw new CustomError(24);
-    const { updatedWinner, updatedLoser } = await this.updateUserStats(userWon, userLost);
-
-    const emails = [];
-    if (updatedWinner?.preferences.emailNotifications) emails.push(updatedWinner.email);
-    if (updatedLoser?.preferences.emailNotifications) emails.push(updatedLoser.email);
-
-    // Send gameover emails
-    if (emails.length) {
-      await EmailService.sendGameOverEmail({
-        winner: userWon,
-        loser: userLost,
-        emails
-      }, winCondition);
-    }
-
-    try {
-      if (userWon?.userData?.username) await DiscordNotificationService.sendGameFinished(userWon.userData.username);
-      if (userLost?.userData?.username) await DiscordNotificationService.sendGameFinished(userLost.userData.username);
-    } catch (err) {
-      console.error('Failed to send Discord game finished notification:', err);
-    }
+    const result = await handleGameOverUtil(message);
+    this.presence.publish("gameOverPresence", result);
   }
 
   async handleTurn(message: ITurnMessage): Promise<void> {
@@ -371,46 +317,4 @@ export class GameRoom extends Room {
   logConnectedClients(): void {
     console.log(`[Game] Connected clients: ${Array.from(this.connectedClients).join(", ")}`);
   }
-
-  async updateUserStats(userWon: IPopulatedPlayerData, userLost: IPopulatedPlayerData): Promise<{
-    updatedWinner: IUser,
-    updatedLoser: IUser
-  }> {
-    const winnerData = await User.findById(userWon.userData._id);
-    const loserData = await User.findById(userLost.userData._id);
-
-    const { winnerNewElo, loserNewElo } = updateELORatings(winnerData!, userWon.faction!, loserData!, userLost.faction!);
-
-    const winnerFactionPath = factionStatsKey[userWon.faction!];
-    const updatedWinner = await User.findByIdAndUpdate(
-      userWon.userData._id,
-      {
-        $set: { [winnerFactionPath]: winnerNewElo.rating },
-        $inc: {
-          'stats.totalGames': 1,
-          'stats.totalWins': 1,
-          ...factionGamesKey[userWon.faction!],
-          ...factionWinsKey[userWon.faction!]
-        }
-      },
-      { runValidators: true }
-    );
-
-    const loserFactionPath = factionStatsKey[userLost.faction!];
-    const updatedLoser = await User.findByIdAndUpdate(
-      userLost.userData._id,
-      {
-        $set: { [loserFactionPath]: loserNewElo.rating },
-        $inc: {
-          'stats.totalGames': 1,
-          ...factionGamesKey[userLost.faction!]
-        }
-      }, { runValidators: true });
-
-    if (!updatedWinner || !updatedLoser) throw new CustomError(24);
-    return {
-      updatedWinner,
-      updatedLoser
-    };
-  };
 }
