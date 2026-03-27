@@ -1,6 +1,6 @@
 import mongoose, { Types } from 'mongoose';
 import IGame from '../interfaces/gameInterface';
-import { EActionClass, EActionType, EAttackType, EFaction, ETiles, EWinConditions } from '../enums/game.enums';
+import { EActionClass, EActionType, EAttackType, EFaction, EGameModes, ETiles, EWinConditions } from '../enums/game.enums';
 
 const { Schema, model } = mongoose;
 
@@ -85,6 +85,10 @@ const CrystalSchema = new Schema({
   },
   paladinAura: {
     type: Number,
+    required: true
+  },
+  annihilatorDebuff: {
+    type: Boolean,
     required: true
   }
 }, { _id: false });
@@ -505,6 +509,11 @@ const GameSchema = new Schema({
     type: Types.ObjectId,
     ref: 'ChatLog',
     required: false // TODO: remove this field. Make it into it's own query (or do a lookup)
+  },
+  gameMode: {
+    type: String,
+    enum: EGameModes,
+    required: true
   }
 });
 

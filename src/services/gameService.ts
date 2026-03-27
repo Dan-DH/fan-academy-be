@@ -1,7 +1,7 @@
 import { matchMaker } from "@colyseus/core";
 import { HydratedDocument, Types } from "mongoose";
 import { CustomError } from "../classes/customError";
-import { EFaction, EGameStatus, EWinConditions } from "../enums/game.enums";
+import { EFaction, EGameModes, EGameStatus, EWinConditions } from "../enums/game.enums";
 import IGame, { IPlayerData, IPopulatedPlayerData, IPopulatedUserData } from "../interfaces/gameInterface";
 import ChatLog from "../models/chatlogModel";
 import Game from "../models/gameModel";
@@ -109,7 +109,8 @@ const GameService = {
       status: opponentId ? EGameStatus.CHALLENGE : EGameStatus.SEARCHING,
       createdAt: new Date(),
       lastPlayedAt: new Date(),
-      chatLogs: gameId
+      chatLogs: gameId,
+      gameMode: EGameModes.STANDARD
     });
 
     const result = await newGame.save();

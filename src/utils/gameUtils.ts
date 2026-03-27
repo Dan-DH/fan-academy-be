@@ -77,6 +77,7 @@ export function createNewGameBoardState(): ITile[] {
         col,
         debuffLevel: 0,
         paladinAura: 0,
+        annihilatorDebuff: false,
         physicalDamageResistance: 0,
         magicalDamageResistance: 0,
         basePhysicalDamageResistance: 0,

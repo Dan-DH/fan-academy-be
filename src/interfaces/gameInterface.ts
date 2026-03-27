@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { EActionClass, EActionType, EAttackType, EClass, EFaction, EGameStatus, EHeroes, EItems, ETiles, EWinConditions } from "../enums/game.enums";
+import { EActionClass, EActionType, EAttackType, EClass, EFaction, EGameModes, EGameStatus, EHeroes, EItems, ETiles, EWinConditions } from "../enums/game.enums";
 import { IUserFactionStats, IUserPreferences } from "./userInterface";
 
 /**
@@ -163,6 +163,7 @@ export interface ICrystal {
   col: number;
   engineerShield?: string;
   paladinAura: number;
+  annihilatorDebuff: boolean;
   physicalDamageResistance: number;
   magicalDamageResistance: number;
   basePhysicalDamageResistance: number;
@@ -208,5 +209,6 @@ export default interface IGame {
   finishedAt?: Date;
   lastPlayedAt?: Date;
   activePlayer?: Types.ObjectId; // userId
-  chatLogs?: Types.ObjectId
+  chatLogs?: Types.ObjectId;
+  gameMode: EGameModes;
 }

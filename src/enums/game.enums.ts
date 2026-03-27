@@ -113,3 +113,7 @@ export enum ETiles {
   SPAWN = 'spawnTile',
   SPEED = 'speedTile'
 }
+
+export enum EGameModes {
+  STANDARD = 'standard'
+}
