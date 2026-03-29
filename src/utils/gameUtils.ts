@@ -218,19 +218,22 @@ export function getProfilePaginationSortOrder(boardType: ELeaderboardEnum) {
   const sortTypeMap = {
     [ELeaderboardEnum.MAIN]: {
       'stats.totalWins': -1,
-      'stats.totalGames': 1,
+      'stats.totalGames': -1,
       _id: 1
     },
     [ELeaderboardEnum.COUNCIL]: {
       'stats.factions.council.rating': -1,
+      'stats.factions.council.games': -1,
       _id: 1
     },
     [ELeaderboardEnum.ELVES]: {
       'stats.factions.elves.rating': -1,
+      'stats.factions.elves.games': -1,
       _id: 1
     },
     [ELeaderboardEnum.DWARVES]: {
       'stats.factions.dwarves.rating': -1,
+      'stats.factions.dwarves.games': -1,
       _id: 1
     }
   };
