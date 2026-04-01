@@ -8,6 +8,7 @@ import Game from "../models/gameModel";
 import { createNewGameBoardState, createNewGameFactionState, updateUserStats } from "../utils/gameUtils";
 import { EmailService } from "../emails/emailService";
 import { DiscordNotificationService } from "./discordNotificationService";
+import User from "../models/userModel";
 
 const GameService = {
   // GET ACTIONS
@@ -43,12 +44,13 @@ const GameService = {
     return [...openGames, ...finishedGames];
   },
 
-  async matchmaking(playerId: string): Promise<HydratedDocument<IGame> | null> {
+  async matchmaking(playerId: string, gameMode: EGameModes): Promise<HydratedDocument<IGame> | null> {
     const userId = new Types.ObjectId(playerId);
 
     const result = await Game.findOne({
       players: { $elemMatch: { userData: { $ne: userId } } },
-      status: EGameStatus.SEARCHING
+      status: EGameStatus.SEARCHING,
+      gameMode
     }).sort({ createdAt: 1 }).populate('players.userData', 'username picture');
 
     console.log('MATCHMAKING RESULT', JSON.stringify(result?._id));
@@ -70,9 +72,10 @@ const GameService = {
   async createGame(params: {
     userId: string,
     faction: EFaction,
+    gameMode: EGameModes,
     opponentId?: string,
   }): Promise<HydratedDocument<IGame>> {
-    const { userId, faction, opponentId } = params;
+    const { userId, faction, gameMode, opponentId } = params;
 
     const activeGamesLimit = 50;
     const playerActiveGames = await Game.find({
@@ -110,7 +113,7 @@ const GameService = {
       createdAt: new Date(),
       lastPlayedAt: new Date(),
       chatLogs: gameId,
-      gameMode: EGameModes.STANDARD
+      gameMode
     });
 
     const result = await newGame.save();
@@ -247,12 +250,16 @@ const GameService = {
     for (const game of games) {
       const winner = game.players.find(player => player.userData._id.toString() !== game.activePlayer?.toString()) as IPopulatedPlayerData;
       const loser = game.players.find(player => player.userData._id.toString() === game.activePlayer?.toString()) as IPopulatedPlayerData;
+      if (!winner || !loser) throw new CustomError(24);
+      const winnerData = await User.findById(winner.userData._id);
+      const loserData = await User.findById(loser.userData._id);
+      if (!winnerData || !loserData) throw new CustomError(24);
 
-      const { updatedWinner, updatedLoser } = await updateUserStats(winner, loser, EWinConditions.TIMEOUT);
+      if (game.gameMode === EGameModes.RANKED) await updateUserStats(winner, loser, winnerData, loserData, EWinConditions.TIMEOUT);
 
       const emails = [];
-      if (updatedWinner?.preferences.emailNotifications) emails.push(winner.userData.email!);
-      if (updatedLoser?.preferences.emailNotifications) emails.push(loser.userData.email!);
+      if (winnerData?.preferences.emailNotifications) emails.push(winner.userData.email!);
+      if (loserData?.preferences.emailNotifications) emails.push(loser.userData.email!);
 
       if (emails.length) {
         userInfoForEmails.push({

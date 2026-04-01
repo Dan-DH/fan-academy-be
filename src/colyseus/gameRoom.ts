@@ -2,7 +2,7 @@ import { JWT, JwtPayload } from "@colyseus/auth";
 import { AuthContext, Client, matchMaker, Room } from "@colyseus/core";
 import { CustomError } from "../classes/customError";
 import { EmailService } from "../emails/emailService";
-import { EFaction } from "../enums/game.enums";
+import { EFaction, EGameModes } from "../enums/game.enums";
 import { IPlayerData, IPopulatedUserData, ITurnMessage } from "../interfaces/gameInterface";
 import { sanitize } from "../middleware/sanitizeInput";
 import ChatLog from "../models/chatlogModel";
@@ -21,6 +21,7 @@ export class GameRoom extends Room {
     userId: string,
     faction: EFaction,
     token: string,
+    gameMode: EGameModes,
     roomId?: string,
     opponentId?: string
   }): Promise<void> {
@@ -39,7 +40,7 @@ export class GameRoom extends Room {
      * -re-creating a room: the options parameter provides the roomId
      *    -checks if the user is one of the two players, then grants access and sends the state
      */
-    const { faction, roomId, opponentId } = options;
+    const { faction, roomId, gameMode, opponentId } = options;
 
     console.log('ON CREATE ROOM - ID AND FACTION NAME', roomId, faction);
     /**
@@ -64,7 +65,7 @@ export class GameRoom extends Room {
      */
     if (!roomId) {
       // Check for games already looking for players
-      const gameLookingForPlayers = await GameService.matchmaking(options.userId);
+      const gameLookingForPlayers = await GameService.matchmaking(options.userId, gameMode);
 
       console.log('CREATING A ROOM FOR A NEW GAME');
 
@@ -110,6 +111,7 @@ export class GameRoom extends Room {
         const newGame = await GameService.createGame({
           userId: options.userId,
           faction,
+          gameMode,
           opponentId
         });
         console.log('NEWGAME', newGame);

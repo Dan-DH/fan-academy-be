@@ -1,5 +1,5 @@
 import { SortOrder } from "mongoose";
-import { EFaction, EGameStatus, ETiles, EWinConditions } from "../enums/game.enums";
+import { EFaction, EGameModes, EGameStatus, ETiles, EWinConditions } from "../enums/game.enums";
 import { ELeaderboardEnum } from "../enums/leaderboard.enums";
 import { createCouncilFactionData } from "../game/factions/councilData";
 import { createDwarvesFactionData } from "../game/factions/dwarvesData";
@@ -268,15 +268,19 @@ export async function handleGameOverUtil(message: ITurnMessage) {
   // Retrieve user ids and publish the update to the users' game lists
   const userIds = updatedGame.players.map((player: IPlayerData) => player.userData._id.toString());
 
-  // Update users stats
   const userWon = updatedGame.players.find(player => player.userData._id.toString() === winner) as unknown as IPopulatedPlayerData;
   const userLost = updatedGame.players.find(player => player.userData._id.toString() !== winner) as unknown as IPopulatedPlayerData;
   if (!userWon || !userLost) throw new CustomError(24);
-  const { updatedWinner, updatedLoser } = await updateUserStats(userWon, userLost, winCondition);
+  const winnerData = await User.findById(userWon.userData._id);
+  const loserData = await User.findById(userLost.userData._id);
+  if (!winnerData || !loserData) throw new CustomError(24);
+
+  // Update users stats for ranked (standard games)
+  if (updatedGame.gameMode === EGameModes.RANKED) await updateUserStats(userWon, userLost, winnerData, loserData, winCondition);
 
   const emails = [];
-  if (updatedWinner?.preferences.emailNotifications) emails.push(updatedWinner.email);
-  if (updatedLoser?.preferences.emailNotifications) emails.push(updatedLoser.email);
+  if (winnerData?.preferences.emailNotifications) emails.push(winnerData.email);
+  if (loserData?.preferences.emailNotifications) emails.push(loserData.email);
 
   // Send gameover emails
   if (emails.length) {
@@ -304,13 +308,10 @@ export async function handleGameOverUtil(message: ITurnMessage) {
   };
 }
 
-export async function updateUserStats(userWon: IPopulatedPlayerData, userLost: IPopulatedPlayerData, winCondition: EWinConditions): Promise<{
+export async function updateUserStats(userWon: IPopulatedPlayerData, userLost: IPopulatedPlayerData, winnerData: IUser, loserData: IUser, winCondition: EWinConditions): Promise<{
   updatedWinner: IUser,
   updatedLoser: IUser
 }> {
-  const winnerData = await User.findById(userWon.userData._id);
-  const loserData = await User.findById(userLost.userData._id);
-
   const { winnerNewElo, loserNewElo } = updateELORatings(winnerData!, userWon.faction!, loserData!, userLost.faction!);
 
   console.log('winnerNewElo', winnerNewElo);

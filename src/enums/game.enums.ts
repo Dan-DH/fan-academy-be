@@ -115,5 +115,6 @@ export enum ETiles {
 }
 
 export enum EGameModes {
-  STANDARD = 'standard'
+  RANKED = 'ranked',
+  CASUAL = 'casual'
 }
