@@ -39,7 +39,7 @@ const UserService = {
         currentGames: [],
         gameHistory: [],
         preferences: {},
-        stats: {},
+        ...statsObject(),
         emailConfirmationLink
       });
       const user = await newUser.save();
@@ -258,5 +258,62 @@ const UserService = {
     }
   }
 };
+
+function statsObject() {
+  return {
+    stats: {
+      factions: {
+        council: {
+          opponentFactions: {
+            council: {
+              wins: {},
+              loses: {}
+            },
+            elves: {
+              wins: {},
+              loses: {}
+            },
+            dwarves: {
+              wins: {},
+              loses: {}
+            }
+          }
+        },
+        elves: {
+          opponentFactions: {
+            council: {
+              wins: {},
+              loses: {}
+            },
+            elves: {
+              wins: {},
+              loses: {}
+            },
+            dwarves: {
+              wins: {},
+              loses: {}
+            }
+          }
+        },
+        dwarves: {
+          opponentFactions: {
+            council: {
+              wins: {},
+              loses: {}
+            },
+            elves: {
+              wins: {},
+              loses: {}
+            },
+            dwarves: {
+              wins: {},
+              loses: {}
+            }
+          }
+        }
+      }
+    }
+  };
+}
 
 export default UserService;
