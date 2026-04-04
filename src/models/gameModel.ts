@@ -1,11 +1,11 @@
 import mongoose, { Types } from 'mongoose';
 import IGame from '../interfaces/gameInterface';
-import { EActionClass, EActionType, EAttackType, EFaction, EGameModes, ETiles, EWinConditions } from '../enums/game.enums';
+import { EActionClass, EActionType, EClass, EFaction, EGameModes, EWinConditions } from '../enums/game.enums';
 
 const { Schema, model } = mongoose;
 
 /**
- * Game Over Schema
+ * GameOverSchema
  */
 const GameOverSchema = new Schema({
   winCondition: {
@@ -20,92 +20,35 @@ const GameOverSchema = new Schema({
 }, { _id: false });
 
 /**
- * Item Schema
+ * CrystalSchema
  */
 const CrystalSchema = new Schema({
+  class: {
+    type: String,
+    enume: EClass,
+    required: true
+  },
   unitId: {
     type: String,
-    required: true
-  },
-  belongsTo: {
-    type: Number,
-    required: true
-  },
-  maxHealth: {
-    type: Number,
     required: true
   },
   currentHealth: {
     type: Number,
     required: true
   },
-  physicalDamageResistance: {
-    type: Number,
-    required: true
-  },
-  basePhysicalDamageResistance: {
-    type: Number,
-    required: true
-  },
-  magicalDamageResistance: {
-    type: Number,
-    required: true
-  },
-  baseMagicalDamageResistance: {
-    type: Number,
-    required: true
-  },
-  row: {
-    type: Number,
-    required: true
-  },
-  col: {
-    type: Number,
-    required: true
-  },
-  isDestroyed: {
-    type: Boolean,
-    required: true
-  },
-  isLastCrystal: {
-    type: Boolean,
-    required: true
-  },
   boardPosition: {
     type: Number,
     required: true
   },
-  debuffLevel: {
-    type: Number,
-    required: true
-  },
-  engineerShield: {
-    type: String,
-    required: false
-  },
-  paladinAura: {
-    type: Number,
-    required: true
-  },
-  annihilatorDebuff: {
-    type: Boolean,
-    required: true
-  }
+  engineerShield: String,
+  stats: Number
 }, { _id: false });
 
 /**
- * Item Schema
+ * ItemSchema
  */
 const ItemSchema = new Schema({
-  faction: {
-    type: String,
-    required: true
-  },
   unitId: {
-    type: String,
-    required: true
-  },
-  itemType: {
     type: String,
     required: true
   },
@@ -113,59 +56,22 @@ const ItemSchema = new Schema({
     type: Number,
     required: true
   },
-  belongsTo: {
-    type: Number,
-    required: true,
-    default: 1
-  },
-  row: {
-    type: Number,
-    required: true,
-    default: 10
-  },
-  canHeal: {
-    type: Boolean,
-    required: true
-  },
-  dealsDamage: {
-    type: Boolean,
+  class: {
+    type: String,
+    enume: EClass,
     required: true
   }
 }, { _id: false });
 
 /**
- * Hero Schema
+ * HeroSchema
  */
 const HeroSchema = new Schema({
-  faction: {
-    type: String,
-    required: true
-  },
-  unitType: {
-    type: String,
-    required: true
-  },
   unitId: {
     type: String,
     required: true
   },
   boardPosition: {
-    type: Number,
-    required: true
-  },
-  row: {
-    type: Number,
-    required: true
-  },
-  col: {
-    type: Number,
-    required: true
-  },
-  baseHealth: {
-    type: Number,
-    required: true
-  },
-  maxHealth: {
     type: Number,
     required: true
   },
@@ -173,138 +79,24 @@ const HeroSchema = new Schema({
     type: Number,
     required: true
   },
-  isKO: {
-    type: Boolean,
-    default: false
-  },
-  lastBreath: {
-    type: Boolean,
-    default: true
-  },
-  movement: {
-    type: Number,
-    required: true
-  },
-  attackRange: {
-    type: Number,
-    required: true
-  },
-  healingRange: {
-    type: Number,
-    required: true
-  },
-  buffRange: {
-    type: Number,
-    required: true
-  },
-  attackType: {
-    type: String,
-    enum: EAttackType,
-    required: true
-  },
-  basePower: {
-    type: Number,
-    required: true
-  },
-  physicalDamageResistance: {
-    type: Number,
-    required: true
-  },
-  basePhysicalDamageResistance: {
-    type: Number,
-    required: true
-  },
-  magicalDamageResistance: {
-    type: Number,
-    required: true
-  },
-  baseMagicalDamageResistance: {
-    type: Number,
-    required: true
-  },
-  factionEquipment: {
-    type: Boolean,
-    required: true
-  },
-  runeMetal: {
-    type: Boolean,
-    required: true
-  },
-  shiningHelm: {
-    type: Boolean,
-    required: true
-  },
-  superCharge: {
-    type: Boolean,
-    required: true
-  },
-  belongsTo: {
-    type: Number,
-    required: true,
-    default: 1
-  },
-  canHeal: {
-    type: Boolean,
-    required: true
-  },
-  canBuff: {
-    type: Boolean,
-    required: true
-  },
-  unitsConsumed: {
+  lastBreath: Boolean,
+  stats: {
     type: Number,
     default: 0
   },
-  priestessDebuff: {
-    type: Boolean,
-    required: true
-  },
-  attackTile: {
-    type: Boolean,
-    required: true
-  },
-  magicalResistanceTile: {
-    type: Boolean,
-    required: true
-  },
-  physicalResistanceTile: {
-    type: Boolean,
-    required: true
-  },
-  manaVial: {
-    type: Boolean,
-    required: true
-  },
-  speedTile: {
-    type: Boolean,
-    required: true
-  },
-  dwarvenBrew: {
-    type: Boolean,
-    required: true
-  },
-  engineerShield: {
+  engineerShield: String,
+  shieldingAlly: String,
+  class: {
     type: String,
-    required: false
-  },
-  annihilatorDebuff: {
-    type: Boolean,
-    required: true
-  },
-  shieldingAlly: {
-    type: String,
-    required: false
-  },
-  paladinAura: {
-    type: Number,
+    enume: EClass,
     required: true
   }
 }, { _id: false });
 
 /**
- * UnitOrItem Schema since Mongoose doesn't allow arrays of mixed schemas
+ * HeroOrItemSchema
  */
-const UnitOrItemSchema = new Schema(
+const HeroOrItemSchema = new Schema(
   {
     class: {
       type: String,
@@ -319,47 +111,35 @@ const UnitOrItemSchema = new Schema(
 );
 
 /**
- * Faction Schema
+ * HeroOrCrystalSchema
+ */
+const HeroOrCrystalSchema = new Schema(
+  {
+    class: {
+      type: String,
+      enum: ['hero', 'crystal'],
+      required: true
+    }
+  },
+  {
+    discriminatorKey: 'class',
+    _id: false
+  }
+);
+
+/**
+ * FactionSchema
  */
 const FactionSchema = new Schema({
   factionName: {
     type: String,
     enum: EFaction,
     required: true
-  },
-  unitsInHand: {
-    type: [UnitOrItemSchema],
-    default: []
-  },
-  unitsInDeck: {
-    type: [UnitOrItemSchema],
-    default: []
-  }
-}, { _id: false });
-
-(FactionSchema.path('unitsInHand') as mongoose.Schema.Types.DocumentArray).discriminator('hero', HeroSchema);
-(FactionSchema.path('unitsInHand') as mongoose.Schema.Types.DocumentArray).discriminator('item', ItemSchema);
-(FactionSchema.path('unitsInDeck') as mongoose.Schema.Types.DocumentArray).discriminator('hero', HeroSchema);
-(FactionSchema.path('unitsInDeck') as mongoose.Schema.Types.DocumentArray).discriminator('item', ItemSchema);
-
-/**
- * user Schema
- */
-const UserSchema = new Schema({
-  userData: {
-    type: Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  faction: {
-    type: String,
-    enum: Object.values(EFaction),
-    required: false
   }
 }, { _id: false });
 
 /**
- * TurnAction Schema
+ * TurnActionSchema
  */
 const TurnActionSchema = new Schema({
   actorPosition: {
@@ -383,144 +163,115 @@ const TurnActionSchema = new Schema({
 }, { _id: false });
 
 /**
- * PlayerState Schema
+ * GamePlayerDataSchema
  */
-const PlayerStateSchema = new Schema({
-  playerId: {
-    type: Types.ObjectId,
-    required: true
-  },
-  factionData: {
-    type: FactionSchema,
-    required: true
-  }
+const GamePlayerDataSchema = new Schema({
+  userId: Types.ObjectId,
+  username: String,
+  portrait: String,
+  faction: String
 }, { _id: false });
 
 /**
- * Tile Schema
+ * GamePlayerResourcesSchema
  */
-const TileSchema = new Schema({
-  row: {
-    type: Number,
-    required: true
-  },
-  col: {
-    type: Number,
-    required: true
-  },
-  boardPosition: {
-    type: Number,
-    required: true
-  },
-  tileType: {
-    type: String,
-    enum: ETiles,
-    required: true
-  },
-  x: {
-    type: Number,
-    required: true
-  },
-  y: {
-    type: Number,
-    required: true
-  },
-  obstacle: {
-    type: Boolean,
-    required: true
-  },
-  hero: {
-    type: HeroSchema,
-    required: false
-  },
-  crystal: {
-    type: CrystalSchema,
-    required: false
-  }
+const GamePlayerResourcesSchema = new Schema({
+  hand: [HeroOrItemSchema],
+  deck: [HeroOrItemSchema]
 }, { _id: false });
 
 /**
- * GameState Schema
+ * GameStateSchema
  */
 const GameStateSchema = new Schema({
   player1: {
-    type: PlayerStateSchema,
+    type: GamePlayerResourcesSchema,
     required: false
   },
   player2: {
-    type: PlayerStateSchema,
+    type: GamePlayerResourcesSchema,
     required: false
   },
-  boardState: {
-    type: [TileSchema],
-    default: []
+  boardState: { type: [HeroOrCrystalSchema] }
+}, { _id: false });
+
+/**
+ * GameCurrentTurnSchema
+ */
+const GameCurrentTurnSchema = new Schema({
+  turnStart: GameStateSchema,
+  turnEnd: GameStateSchema,
+  actions: [TurnActionSchema]
+}, { _id: false });
+
+/**
+ * ChatMessageSchema
+ */
+const ChatMessageSchema = new Schema({
+  username: {
+    type: String,
+    require: true
   },
-  action: {
-    type: TurnActionSchema,
-    required: false
+  message: {
+    type: String,
+    require: true
   }
 }, { _id: false });
 
 /**
- * RoomState Schema
+ * GameSchema
  */
 const GameSchema = new Schema({
   _id: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Types.ObjectId,
     required: true
   },
   players: {
-    type: [UserSchema],
-    default: []
-  },
-  turnNumber: {
-    type: Number,
+    type: [GamePlayerDataSchema],
     required: true
-  },
-  previousTurn: {
-    type: [GameStateSchema],
-    required: true
-  },
-  gameOver: {
-    type: GameOverSchema,
-    required: false
-  },
-  status: {
-    type: String,
-    required: true
-  },
-  createdAt: {
-    type: Date,
-    required: true
-  },
-  finishedAt: {
-    type: Date,
-    required: false
-  },
-  lastPlayedAt: {
-    type: Date,
-    required: false
-  },
-  activePlayer: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: false
-  },
-  chatLogs: {
-    type: Types.ObjectId,
-    ref: 'ChatLog',
-    required: false // TODO: remove this field. Make it into it's own query (or do a lookup)
   },
   gameMode: {
     type: String,
     enum: EGameModes,
     required: true
-  }
+  },
+  map: { // TODO: move map to FE
+    type: Number,
+    required: true
+  },
+  status: {
+    type: String,
+    required: true
+  },
+  turnNumber: {
+    type: Number,
+    required: true
+  },
+  turnHistory: [GameCurrentTurnSchema],
+  currentTurn: GameCurrentTurnSchema,
+  gameOver: GameOverSchema,
+  createdAt: Date,
+  finishedAt: Date,
+  lastPlayedAt: Date,
+  activePlayer: String,
+  chatLog: [ChatMessageSchema]
 });
 
-// Indexing for checking if games have timed out
+// Discriminators
+(FactionSchema.path('unitsInHand') as mongoose.Schema.Types.DocumentArray).discriminator('hero', HeroSchema);
+(FactionSchema.path('unitsInHand') as mongoose.Schema.Types.DocumentArray).discriminator('item', ItemSchema);
+(FactionSchema.path('unitsInDeck') as mongoose.Schema.Types.DocumentArray).discriminator('hero', HeroSchema);
+(FactionSchema.path('unitsInDeck') as mongoose.Schema.Types.DocumentArray).discriminator('item', ItemSchema);
+(FactionSchema.path('boardState') as mongoose.Schema.Types.DocumentArray).discriminator('hero', HeroSchema);
+(FactionSchema.path('boardState') as mongoose.Schema.Types.DocumentArray).discriminator('crystal', CrystalSchema);
+
+// Indexes
+GameSchema.index({ gameMode: 1 });
+GameSchema.index({ lastPlayedAt: 1 });
+GameSchema.index({ "players.userId": 1 });
 GameSchema.index({
-  'players.userData': 1,
   status: 1,
+  "players.userId": 1,
   lastPlayedAt: 1
 });
 

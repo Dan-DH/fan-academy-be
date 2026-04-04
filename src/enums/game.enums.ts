@@ -1,7 +1,7 @@
-export enum EAttackType {
-  PHYSICAL = 'physical',
-  MAGICAL = 'magical'
-};
+// export enum EAttackType {
+//   PHYSICAL = 'physical',
+//   MAGICAL = 'magical'
+// };
 
 export enum EGameStatus {
   SEARCHING = 'searching',
@@ -73,7 +73,8 @@ export enum EItems {
 
 export enum EClass {
   HERO = 'hero',
-  ITEM = 'item'
+  ITEM = 'item',
+  CRYSTAL = 'crystal'
 }
 
 export enum EHeroes {

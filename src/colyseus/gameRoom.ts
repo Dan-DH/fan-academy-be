@@ -1,322 +1,185 @@
-import { JWT, JwtPayload } from "@colyseus/auth";
-import { AuthContext, Client, matchMaker, Room } from "@colyseus/core";
-import { CustomError } from "../classes/customError";
-import { EmailService } from "../emails/emailService";
-import { EFaction, EGameModes } from "../enums/game.enums";
-import { IPlayerData, IPopulatedUserData, ITurnMessage } from "../interfaces/gameInterface";
-import { sanitize } from "../middleware/sanitizeInput";
-import ChatLog from "../models/chatlogModel";
-import Game from "../models/gameModel";
-import User from '../models/userModel';
-import GameService from "../services/gameService";
-import { DiscordNotificationService } from "../services/discordNotificationService";
-import { handleGameOverUtil } from "../utils/gameUtils";
+// import { JWT, JwtPayload } from "@colyseus/auth";
+// import { AuthContext, Client, matchMaker, Room } from "@colyseus/core";
+// import { CustomError } from "../classes/customError";
+// import { EmailService } from "../emails/emailService";
+// import { ITurnMessage } from "../interfaces/gameInterface";
+// import { sanitizeInput } from "../middleware/sanitizeInput";
+// import Game from "../models/gameModel";
+// import User from '../models/userModel';
+// import GameService from "../services/gameService";
+// import { DiscordNotificationService } from "../services/discordNotificationService";
+// import { handleGameOverUtil } from "../utils/gameUtils";
+// import { IColyseusOnCreate } from "../interfaces/colyseusInterface";
+// import IUser from "../interfaces/userInterface";
 
-export class GameRoom extends Room {
-  connectedClients: Set<string> = new Set();
+// export class GameRoom extends Room {
+//   // connectedClients: Set<string> = new Set();
 
-  onInit(_options: any) { }
+//   onInit(_options: any) { }
 
-  async onCreate(options: {
-    userId: string,
-    faction: EFaction,
-    token: string,
-    gameMode: EGameModes,
-    roomId?: string,
-    opponentId?: string
-  }): Promise<void> {
-    /**
-     * onCreate can be called when:
-     * -looking for a game.
-     *    -checks for already opened rooms
-     *      -if no room is found:
-     *        -creates the room for the first time (no second player, room is disposed of immediatly), also no roomId (uuid) provided by the FE
-     *        -creates the room, adds player1 data, sets the room status to 'searching'
-     *
-     *      -if a room is found, adds player2 data, sets room status to 'playing'
-     *
-     *      -update the game list
-     *
-     * -re-creating a room: the options parameter provides the roomId
-     *    -checks if the user is one of the two players, then grants access and sends the state
-     */
-    const { faction, roomId, gameMode, opponentId } = options;
+//   async onCreate(options: IColyseusOnCreate): Promise<void> {
+//     console.log('ON CREATE ROOM - ID AND FACTION NAME', options.roomId, options.faction);
 
-    console.log('ON CREATE ROOM - ID AND FACTION NAME', roomId, faction);
-    /**
-     *
-     * CREATING A ROOM FOR A GAME ALREADY IN PLAY
-     *
-     */
-    if (roomId) {
-      // get the game and check if the user is one of the players
-      const game = await GameService.getColyseusRoom(roomId, options.userId);
-      if (!game) console.log('Player not found in players array');
+//     // CREATING A ROOM FOR A GAME ALREADY IN PLAY
+//     if (options.roomId) await this.handleRoomForExistingGame(options);
 
-      console.log('CREATING A ROOM FOR A GAME ALREADY IN PLAY');
+//     // CREATING A ROOM FOR A NEW GAME
+//     if (!options.roomId) await this.handleRoomForNewGame(options);
 
-      this.roomId = roomId;
-    }
+//     console.log("Game room created! ID -> ", this.roomId);
 
-    /**
-     *
-     * CREATING A ROOM FOR A NEW GAME
-     *
-     */
-    if (!roomId) {
-      // Check for games already looking for players
-      const gameLookingForPlayers = await GameService.matchmaking(options.userId, gameMode);
+//     // MESSAGES // FIXME: check all messages
+//     // I think I'm gonna need to route the game updates through the LobbyRoom to avoid sending the games to everyone with this.presence.publish
+//   }
 
-      console.log('CREATING A ROOM FOR A NEW GAME');
+//   // Handle client joining
+//   onJoin(client: Client, options: {
+//     roomId: string,
+//     userId: string,
+//     token: string
+//   }, _auth: any): void {
+//     (client as any).userId = options.userId; // TypeScript workaround
+//     this.connectedClients.add((client as any).userId);
 
-      if (gameLookingForPlayers) {
-        console.log('Matchmaking found an open game');
+//     console.log(`[Game] Client joined room: ${(client as any).userId} - ${this.roomId}`);
+//     this.logConnectedClients();
+//   }
 
-        const updatedGame = await GameService.addPlayerTwo(gameLookingForPlayers, faction, options.userId);
-        if (!updatedGame) throw new CustomError(24);
+//   async requestJoin(options: any, _client: Client): Promise<boolean> {
+//     const { roomId, userId, token } = options;
 
-        this.roomId = updatedGame._id.toString();
+//     if (!roomId || !userId || !token) {
+//       console.warn("Missing parameter in join request.");
+//       return false;
+//     }
 
-        // Send a message to update the game list
-        const playerOneId = updatedGame.players[0].userData._id.toString();
-        this.presence.publish("newGamePresence", {
-          game: updatedGame,
-          userIds: [options.userId, playerOneId]
-        });
+//     try {
+//       // Verify the game exists and the user is a participant
+//       const game = await GameService.getColyseusRoom(roomId, userId);
 
-        // Send email to player 1 if they are the first player
-        if (updatedGame.activePlayer?.toString() === playerOneId) {
-          const userData = updatedGame.players[0].userData as unknown as IPopulatedUserData;
+//       if (!game) {
+//         console.warn(`No matching game found for roomId=${roomId} and userId=${userId}`);
+//         return false;
+//       }
 
-          const isOnline = await matchMaker.presence.get(`user:${playerOneId}`);
+//       const isPlayer = game.players.some(p => p.userData.toString() === userId);
 
-          const acceptsEmails = userData.preferences?.emailNotifications;
+//       if (!isPlayer) {
+//         console.warn(`User ${userId} is not a player in game ${roomId}`);
+//         return false;
+//       }
 
-          const confirmedEmail = userData?.confirmedEmail;
+//       // Optional: Reject if room is already full
+//       if (this.clients.length >= this.maxClients) {
+//         console.warn(`Room ${roomId} is full.`);
+//         return false;
+//       }
 
-          if (!isOnline && acceptsEmails && confirmedEmail!) {
-            await EmailService.sendTurnNotificationEmail(userData.email!, userData.username!);
-          }
+//       return true;
+//     } catch (err) {
+//       console.error("Error in requestJoin:", err);
+//       return false;
+//     }
+//   }
 
-          try {
-            if (typeof userData.username === 'string') await DiscordNotificationService.sendYourTurn(userData.username);
-          } catch (err) {
-            console.error('Failed to send Discord your turn notification:', err);
-          }
-        }
-      }
+//   // Handle client leaving
+//   onLeave(client: Client, _consented: boolean): void {
+//     this.connectedClients.delete((client as any).userId);
+//     console.log(`[Game] Client left room: ${(client as any).userId}`);
+//     this.logConnectedClients();
+//   }
 
-      // If there are no games looking for players, create one
-      if (!gameLookingForPlayers) {
-        const newGame = await GameService.createGame({
-          userId: options.userId,
-          faction,
-          gameMode,
-          opponentId
-        });
-        console.log('NEWGAME', newGame);
+//   // Handle room disposal
+//   onDispose(): void {
+//     console.log("Room disposed", this.roomId);
+//   }
 
-        if (!newGame) return undefined;
+//   logConnectedClients(): void {
+//     console.log(`[Game] Connected clients: ${Array.from(this.connectedClients).join(", ")}`);
+//   }
 
-        this.roomId = newGame._id.toString();
+//   async handleRoomForExistingGame(options: IColyseusOnCreate): Promise<void> {
+//     // get the game and check if the user is one of the players
+//     const game = await GameService.getColyseusRoom(options.roomId!, options.userId);
+//     if (!game) console.log('Player not found in players array');
 
-        // Send a message to update the game list
-        this.presence.publish("newGamePresence", {
-          game: newGame,
-          userIds: [options.userId]
-        });
-      }
-    }
+//     console.log('CREATING A ROOM FOR A GAME ALREADY IN PLAY');
 
-    console.log("Game room created! ID -> ", this.roomId);
+//     this.roomId = options.roomId!;
+//   }
 
-    this.onMessage("turnSent", async (client: Client, message: ITurnMessage) => {
-      console.log(`Turn sent by client ${(client as any).userId}`);
+//   async handleRoomForNewGame(options: IColyseusOnCreate) {
+//     const { faction, gameMode, opponentId } = options;
 
-      if (message.gameOver) {
-        console.log('Game over!');
-        await this.handleGameOver(message);
-      } else {
-        await this.handleTurn(message);
-      }
-    });
+//     // Check for games already looking for players
+//     const gameLookingForPlayers = await GameService.matchmaking(options.userId, gameMode);
 
-    this.onMessage("ping", (client: Client) => {
-      console.log(`Received game ping from user ${(client as any).userId}`);
-      this.broadcast('pong');
-    });
+//     console.log('CREATING A ROOM FOR A NEW GAME');
 
-    this.onMessage("chatMessage", async (client: Client, message: {
-      _id: string,
-      message: string,
-      token: string
-    }) => {
-      console.log(`Chat sent by client ${client.auth._id} in room ${this.roomId}`);
-      const sanitizedMessage = sanitize(message.message);
+//     if (gameLookingForPlayers) {
+//       console.log('Matchmaking found an open game');
 
-      // Update the chat log on the db, or create one if none exists
-      const messageToPush = {
-        username: client.auth.username,
-        message: sanitizedMessage,
-        createdAt: new Date()
-      };
+//       const updatedGame = await GameService.addPlayerTwo(gameLookingForPlayers, faction, options.userId);
+//       if (!updatedGame) throw new CustomError(24);
 
-      const updatedChatlog = await ChatLog.findByIdAndUpdate(this.roomId, { $push: { messages: messageToPush } });
+//       this.roomId = updatedGame._id.toString();
 
-      // Safeguard in case a chatlog wasn't created alongside the game
-      if (!updatedChatlog) {
-        const chatLog = new ChatLog({
-          _id: this.roomId,
-          messages: [messageToPush]
-        });
-        await chatLog.save();
-      }
+//       // Send a message to update the game list
+//       const playerOneId = updatedGame.players[0].userId.toString();
+//       this.presence.publish("newGamePresence", {
+//         game: updatedGame, // TODO: probably don't need the whole game here
+//         userIds: [options.userId, playerOneId]
+//       });
 
-      this.broadcast('chatMessageReceived', {
-        username: client.auth.username,
-        message: sanitizedMessage
-      });
-    });
-  }
+//       // Send email to player 1 if they are the first player
+//       if (updatedGame.activePlayer?.toString() === playerOneId) {
+//         const isOnline = await matchMaker.presence.get(`user:${playerOneId}`);
 
-  async handleGameOver(message: ITurnMessage): Promise<void> {
-    const result = await handleGameOverUtil(message);
-    this.presence.publish("gameOverPresence", result);
-  }
+//         const user: IUser | null = await User.findById(playerOneId, {
+//           preferences: 1,
+//           confirmedEmail: 1,
+//           turnEmailSent: 1,
+//           email: 1,
+//           username: 1
+//         }).lean();
 
-  async handleTurn(message: ITurnMessage): Promise<void> {
-    const lastPlayedAt = new Date();
-    const updatedGame = await Game.findByIdAndUpdate(message._id, {
-      previousTurn: message.currentTurn,
-      turnNumber: message.turnNumber,
-      activePlayer: message.newActivePlayer,
-      lastPlayedAt
-    }, {
-      new: true,
-      runValidators: true
-    }).populate('players.userData', "username picture preferences email confirmedEmail turnEmailSent");
+//         if (!user) throw new CustomError(40);
 
-    if (!updatedGame) throw new CustomError(24);
+//         const acceptsEmails = user.preferences.emailNotifications;
+//         const confirmedEmail = user.confirmedEmail;
+//         const turnEmailSent = user.turnEmailSent;
 
-    // Send a notification if the new active player is offline, can receive emails and it has not already received a notification email since the last time they logged in
-    const playerToNotify = updatedGame.players.find((player) =>
-      player.userData._id.toString() === updatedGame.activePlayer?.toString());
+//         if (!isOnline && acceptsEmails && confirmedEmail && !turnEmailSent) {
+//           await EmailService.sendTurnNotificationEmail(user.email, user.username);
+//         }
 
-    if (playerToNotify) {
-      const userData = playerToNotify.userData as unknown as IPopulatedUserData;
+//         try {
+//           await DiscordNotificationService.sendYourTurn(user.username);
+//         } catch (err) {
+//           console.error('Failed to send Discord "your turn" notification:', err);
+//         }
+//       }
+//     }
 
-      const isOnline = await matchMaker.presence.get(`user:${updatedGame.activePlayer}`);
+//     // If there are no games looking for players, create one
+//     if (!gameLookingForPlayers) {
+//       const newGame = await GameService.createGame({
+//         userId: options.userId,
+//         faction,
+//         gameMode,
+//         opponentId
+//       });
+//       console.log('NEWGAME', newGame);
 
-      const acceptsEmails = userData.preferences?.emailNotifications;
-      const confirmedEmail = userData?.confirmedEmail;
-      const turnEmailSent = userData?.turnEmailSent;
+//       if (!newGame) return undefined;
 
-      if (!isOnline && acceptsEmails && confirmedEmail! && !turnEmailSent) {
-        await EmailService.sendTurnNotificationEmail(userData.email!, userData.username!);
-        await User.findByIdAndUpdate(userData._id, { turnEmailSent: true }, { runValidators: true });
-      }
+//       this.roomId = newGame._id.toString();
 
-      try {
-        if (typeof userData.username === 'string') {
-          await DiscordNotificationService.sendYourTurn(userData.username);
-        }
-      } catch (err) {
-        console.error('Failed to send Discord your turn notification:', err);
-      }
-    }
-
-    // Retrieve user ids and publish update the users' game lists
-    const userIds = updatedGame.players.map((player: IPlayerData) => player.userData._id.toString());
-    this.presence.publish("gameUpdatedPresence", {
-      gameId: message._id,
-      previousTurn: message.currentTurn,
-      turnNumber: message.turnNumber,
-      newActivePlayer: message.newActivePlayer.toString(),
-      lastPlayedAt,
-      userIds
-    });
-  }
-
-  // Handle client joining
-  onJoin(client: Client, options: {
-    roomId: string,
-    userId: string,
-    token: string
-  }, _auth: any): void {
-    (client as any).userId = options.userId; // TypeScript workaround
-    this.connectedClients.add((client as any).userId);
-
-    console.log(`[Game] Client joined room: ${(client as any).userId} - ${this.roomId}`);
-    this.logConnectedClients();
-  }
-
-  async requestJoin(options: any, _client: Client): Promise<boolean> {
-    const { roomId, userId, token } = options;
-
-    if (!roomId || !userId || !token) {
-      console.warn("Missing parameter in join request.");
-      return false;
-    }
-
-    try {
-      // Verify the game exists and the user is a participant
-      const game = await GameService.getColyseusRoom(roomId, userId);
-
-      if (!game) {
-        console.warn(`No matching game found for roomId=${roomId} and userId=${userId}`);
-        return false;
-      }
-
-      const isPlayer = game.players.some(p => p.userData.toString() === userId);
-
-      if (!isPlayer) {
-        console.warn(`User ${userId} is not a player in game ${roomId}`);
-        return false;
-      }
-
-      // Optional: Reject if room is already full
-      if (this.clients.length >= this.maxClients) {
-        console.warn(`Room ${roomId} is full.`);
-        return false;
-      }
-
-      return true;
-    } catch (err) {
-      console.error("Error in requestJoin:", err);
-      return false;
-    }
-  }
-
-  // Handle client leaving
-  onLeave(client: Client, _consented: boolean): void {
-    this.connectedClients.delete((client as any).userId);
-    console.log(`[Game] Client left room: ${(client as any).userId}`);
-    this.logConnectedClients();
-  }
-
-  // Handle room disposal
-  onDispose(): void {
-    console.log("Room disposed", this.roomId);
-  }
-
-  // Room auth
-  static async onAuth(_token: string, options: any, _context: AuthContext): Promise<JwtPayload | boolean> {
-    try {
-      const user = await JWT.verify(options.token) as JwtPayload;
-
-      if (user) {
-        console.log(`User authenticated`, user);
-        return user;
-      }
-
-      console.log('Authentication failed');
-      return false;
-    } catch (err) {
-      throw new Error("Invalid or expired token");
-    }
-  }
-
-  logConnectedClients(): void {
-    console.log(`[Game] Connected clients: ${Array.from(this.connectedClients).join(", ")}`);
-  }
-}
+//       // Send a message to update the game list
+//       this.presence.publish("newGamePresence", {
+//         game: newGame,
+//         userIds: [options.userId]
+//       });
+//     }
+//   }
+// }

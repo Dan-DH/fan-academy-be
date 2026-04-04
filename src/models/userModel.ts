@@ -4,17 +4,14 @@ import IUser from '../interfaces/userInterface';
 const PreferencesSchema = new Schema({
   emailNotifications: {
     type: Boolean,
-    required: true,
     default: true
   },
   chat: {
     type: Boolean,
-    required: true,
     default: true
   },
   sound: {
     type: Boolean,
-    required: true,
     default: true
   }
 });
@@ -22,22 +19,18 @@ const PreferencesSchema = new Schema({
 const OpponentFactionWinStats = new Schema({
   crystal: {
     type: Number,
-    required: true,
     default: 0
   },
   hero: {
     type: Number,
-    required: true,
     default: 0
   },
   timeout: {
     type: Number,
-    required: true,
     default: 0
   },
   conceded: {
     type: Number,
-    required: true,
     default: 0
   }
 });
@@ -45,106 +38,66 @@ const OpponentFactionWinStats = new Schema({
 const OpponentFactiontats = new Schema({
   games: {
     type: Number,
-    required: true,
     default: 0
   },
   totalWins: {
     type: Number,
-    required: true,
     default: 0
   },
   totalLoses: {
     type: Number,
-    required: true,
     default: 0
   },
-  wins: {
-    type: OpponentFactionWinStats,
-    required: true
-  },
-  loses: {
-    type: OpponentFactionWinStats,
-    required: true
-  }
+  wins: OpponentFactionWinStats,
+  loses: OpponentFactionWinStats
 });
 
 const OpponentFactions = new Schema({
-  council: {
-    type: OpponentFactiontats,
-    required: true
-  },
-  elves: {
-    type: OpponentFactiontats,
-    required: true
-  },
-  dwarves: {
-    type: OpponentFactiontats,
-    required: true
-  }
+  council: OpponentFactiontats,
+  elves: OpponentFactiontats,
+  dwarves: OpponentFactiontats
 });
 
 const FactionStatsSchema = new Schema({
   games: {
     type: Number,
-    required: true,
     default: 0
   },
   wins: {
     type: Number,
-    required: true,
     default: 0
   },
   loses: {
     type: Number,
-    required: true,
     default: 0
   },
   rating: {
     type: Number,
-    required: true,
     default: 1500
   },
-  opponentFactions: {
-    type: OpponentFactions,
-    required: true
-  }
+  opponentFactions: OpponentFactions
 });
 
 const FactionsSchema = new Schema({
-  council: {
-    type: FactionStatsSchema,
-    required: true
-  },
-  elves: {
-    type: FactionStatsSchema,
-    required: true
-  },
-  dwarves: {
-    type: FactionStatsSchema,
-    required: true
-  }
+  council: FactionStatsSchema,
+  elves: FactionStatsSchema,
+  dwarves: FactionStatsSchema
 });
 
 const StatsSchema = new Schema({
   totalGames: {
     type: Number,
-    required: true,
     default: 0
   },
   totalWins: {
     type: Number,
-    required: true,
     default: 0
   },
   totalLoses: {
     type: Number,
-    required: true,
     default: 0
   },
-  factions: {
-    type: FactionsSchema,
-    required: true
-  }
+  factions: FactionsSchema
 });
 
 const UserSchema = new Schema({
@@ -154,36 +107,25 @@ const UserSchema = new Schema({
     maxLength: 20,
     required: true
   },
-  password: {
-    type: String,
-    required: false
-  },
+  password: String,
   email: {
     type: String,
     match: [/^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/, 'Please fill in a valid email address']
   },
-  picture: String,
+  portrait: String,
   lastSeen: Date,
   preferences: PreferencesSchema,
   stats: StatsSchema,
-  emailConfirmationLink: {
-    type: String,
-    required: false
-  },
+  emailConfirmationLink: String,
   confirmedEmail: {
     type: Boolean,
-    required: true,
     default: false
   },
   turnEmailSent: {
     type: Boolean,
-    required: true,
     default: false
   },
-  recoveryCode: {
-    type: String,
-    required: false
-  }
+  recoveryCode: String
 });
 
 const User = model<IUser>('User', UserSchema);

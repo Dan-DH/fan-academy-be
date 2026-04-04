@@ -13,14 +13,14 @@ export class DiscordNotificationService {
     type: NotificationType;
     username: string;
   }): Promise<void> {
-    const notification = await Notification.findOne({ type });
+    const notification = await Notification.findOne({ type }).lean();
     if (!notification) {
       throw new Error(`Notification definition for type '${type}' not found.`);
     }
 
     console.log(`[Discord] Notify ${username}: ${notification.title} - ${notification.summary}`);
 
-    // Record delivery attempt
+    // Record delivery attempt // TODO: can I do findAndUpdate instead of create
     await NotificationDelivery.create({
       notificationId: notification._id,
       username,

@@ -11,7 +11,7 @@ import "express-async-errors"; // Error MW patch
 import http from 'http';
 import passport from "passport";
 import { GameRoom } from "./colyseus/gameRoom";
-import { Lobby } from "./colyseus/lobby";
+import { Lobby } from "./colyseus/lobbyRoom";
 import gameRouter from './controllers/gameController';
 import userRouter from './controllers/userController';
 import { databaseConnection } from "./db";

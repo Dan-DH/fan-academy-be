@@ -6,11 +6,12 @@ import { isAuthenticated } from "../middleware/jwt";
 
 const router = Router();
 
+// TODO: I guess we don't use any of this...
 // Get user's ongoing games
 router.get('/playing', isAuthenticated, async (req: Request, res: Response, _next: NextFunction): Promise<Response> => {
   const userId = req.query.userId?.toString();
 
-  const response = await GameService.getCurrentGames(userId!);
+  const response = await GameService.getCurrentGamesForGameList(userId!);
 
   return res.send(response);
 });

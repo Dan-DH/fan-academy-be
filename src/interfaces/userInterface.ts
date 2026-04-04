@@ -1,5 +1,6 @@
 import { Types } from "mongoose";
 
+// TODO: do I need to make all this optional?
 export interface IUserPreferences {
   emailNotifications: boolean;
   chat: boolean;
@@ -50,12 +51,13 @@ interface IUser extends Express.User {
   username: string;
   email: string;
   password?: string;
-  picture?: string;
+  portrait?: string;
   preferences: IUserPreferences;
   stats: IUserStats;
   emailConfirmationLink: string;
   confirmedEmail: boolean;
   recoveryCode?: string;
+  turnEmailSent: boolean
 }
 
 export default IUser;

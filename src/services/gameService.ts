@@ -2,58 +2,62 @@ import { matchMaker } from "@colyseus/core";
 import { HydratedDocument, Types } from "mongoose";
 import { CustomError } from "../classes/customError";
 import { EFaction, EGameModes, EGameStatus, EWinConditions } from "../enums/game.enums";
-import IGame, { IPlayerData, IPopulatedPlayerData, IPopulatedUserData } from "../interfaces/gameInterface";
-import ChatLog from "../models/chatlogModel";
+import IGame from "../interfaces/gameInterface";
 import Game from "../models/gameModel";
-import { createNewGameBoardState, createNewGameFactionState, updateUserStats } from "../utils/gameUtils";
+import { createNewFactionDeck, updateUserStats } from "../utils/gameUtils";
 import { EmailService } from "../emails/emailService";
 import { DiscordNotificationService } from "./discordNotificationService";
 import User from "../models/userModel";
+import { IColyseusOnCreate } from "../interfaces/colyseusInterface";
 
 const GameService = {
   // GET ACTIONS
-  async getCurrentGames(userId: string): Promise<IGame[] | null> {
-    const userObjectId = new Types.ObjectId(userId);
-    console.log('userId', userId);
-
+  async getCurrentGamesForGameList(userId: string): Promise<IGame[] | null> {
     // Check for games where a player has not played for over a week and update them before returning the game list to the player
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const timedOutGames = await Game.find({
-      'players.userData': userObjectId,
+      'players.userId': userId,
       status: EGameStatus.PLAYING,
       lastPlayedAt: { $lt: oneWeekAgo }
-    }).populate('players.userData', 'username email');
+    }).lean(); // TODO: project only needed fields
 
     if (timedOutGames) await this.handleTimedOutGames(timedOutGames);
 
-    const openGames = await Game.find({
-      'players.userData': userObjectId,
-      status: { $ne: EGameStatus.FINISHED }
-    })
-      .sort({ lastPlayedAt: 1 })
-      .populate('players.userData', 'username picture').populate('chatLogs');
+    const gameList = await Game.aggregate([
+      { $match: { 'players.userId': userId } },
+      {
+        $project: {
+          players: 1,
+          status: 1,
+          lastPlayedAt: 1
+        }
+      },
+      {
+        $facet: {
+          openGames: [
+            { $match: { status: { $ne: EGameStatus.FINISHED } } },
+            { $sort: { lastPlayedAt: 1 } }
+          ],
+          finishedGames: [
+            { $match: { status: EGameStatus.FINISHED } },
+            { $sort: { finishedAt: -1 } },
+            { $limit: 10 }
+          ]
+        }
+      }
+    ]);
 
-    const finishedGames = await Game.find({
-      'players.userData': userObjectId,
-      status: EGameStatus.FINISHED
-    })
-      .sort({ finishedAt: -1 })
-      .limit(5)
-      .populate('players.userData', 'username picture').populate('chatLogs');
+    const { openGames, finishedGames } = gameList[0];
 
     return [...openGames, ...finishedGames];
   },
 
-  async matchmaking(playerId: string, gameMode: EGameModes): Promise<HydratedDocument<IGame> | null> {
-    const userId = new Types.ObjectId(playerId);
-
+  async matchmaking(playerId: string, gameMode: EGameModes): Promise<IGame | null> {
     const result = await Game.findOne({
-      players: { $elemMatch: { userData: { $ne: userId } } },
+      players: { $elemMatch: { userData: { $ne: playerId } } },
       status: EGameStatus.SEARCHING,
       gameMode
-    }).sort({ createdAt: 1 }).populate('players.userData', 'username picture');
-
-    console.log('MATCHMAKING RESULT', JSON.stringify(result?._id));
+    }).sort({ createdAt: 1 }).lean();
 
     return result;
   },
@@ -95,9 +99,10 @@ const GameService = {
     const userObjId = new Types.ObjectId(userId);
     const gameId = new Types.ObjectId();
 
+    // TODO:
     // Create a chat log for the game
-    const chatLog = new ChatLog({ _id: gameId });
-    await chatLog.save();
+    // const chatLog = new ChatLog({ _id: gameId });
+    // await chatLog.save();
 
     const newGame = new Game({
       _id: gameId,
@@ -127,10 +132,10 @@ const GameService = {
       });
 
       // Send email to challenged user if they are not online but have notifications enabled
-      const challengedUser = result.players[1].userData as unknown as IPopulatedUserData;
-      const challenger = result.players[0].userData as unknown as IPopulatedUserData;
+      const challengedUser = result.players[1].userId;
+      const challenger = result.players[0].userId;
 
-      const isOnline = await matchMaker.presence.get(`user:${opponentId}`);
+      const isOnline = this.clients.find(c => (c as any).userId === challengedUser);
 
       const acceptsEmails = challengedUser.preferences?.emailNotifications;
 
@@ -149,51 +154,64 @@ const GameService = {
     return result;
   },
 
-  async addPlayerTwo(gameLookingForPlayers: HydratedDocument<IGame>, faction: EFaction, userId: string): Promise<HydratedDocument<IGame> | null> {
+  async addPlayerTwo(game: IGame, options: IColyseusOnCreate): Promise<IGame | null> {
     try {
-      const userObjectId = new Types.ObjectId(userId);
+      const playerTwo = await User.findById(options.userId, {
+        _id: 0,
+        username: 1,
+        portrait: 1
+      }).lean();
+      if (!playerTwo) throw new CustomError(40);
 
-      gameLookingForPlayers.players[1] = {
-        userData: userObjectId,
-        faction
+      const p1Deck = createNewFactionDeck(game.players[0].userId, game.players[0].faction);
+      const p2Deck = createNewFactionDeck(options.userId, options.faction);
+
+      // TODO: move this somewhere else
+      const getActivePlayer = (p1: string, p2: string) => {
+        return Math.random() < 0.5 ? p1 : p2;
       };
-      gameLookingForPlayers.previousTurn.push({});
+      const activePlayer = getActivePlayer(game.players[0].userId, options.userId);
 
-      // Create the player decks
-      gameLookingForPlayers.players.forEach((player, index) => {
-        const playerFaction = createNewGameFactionState(player.userData._id.toString(), player.faction!);
-
-        if (index === 1) {
-          playerFaction.unitsInDeck.forEach(unit => unit.belongsTo = 2);
-          playerFaction.unitsInHand.forEach(unit => unit.belongsTo = 2);
-
-          gameLookingForPlayers.previousTurn[0].player2 = {
-            playerId: player.userData,
-            factionData: { ...playerFaction }
-          };
-        } else {
-          gameLookingForPlayers.previousTurn[0].player1 = {
-            playerId: player.userData,
-            factionData: { ...playerFaction }
-          };
+      const updatedGame = await Game.findOneAndUpdate(
+        {
+          _id: game._id,
+          status: EGameStatus.SEARCHING
+        },
+        {
+          $push: {
+            players: {
+              userId: options.userId,
+              username: playerTwo.username,
+              portrait: playerTwo.portrait,
+              faction: options.faction
+            }
+          },
+          $set: {
+            status: EGameStatus.PLAYING,
+            currentTurn: {
+              turnStartSnapshot: {
+                p1: { deck: p1Deck },
+                p2: { deck: p2Deck }
+              }
+            },
+            lastPlayedAt: new Date(),
+            activePlayer
+          }
+        },
+        {
+          new: true,
+          runValidators: true,
+          projection: {
+            currentTurn: 1,
+            players: 1,
+            lastPlayedAt: 1,
+            status: 1,
+            activePlayer: 1
+          }
         }
-      });
+      );
 
-      gameLookingForPlayers.previousTurn[0].boardState = createNewGameBoardState();
-
-      gameLookingForPlayers.status = EGameStatus.PLAYING;
-
-      // Randomly select the starting player
-      const playerIds = gameLookingForPlayers.players.map((player: IPlayerData) => player.userData._id);
-      gameLookingForPlayers.activePlayer = Math.random() > 0.5 ? playerIds[0] : playerIds[1];
-
-      // Add date for display order in FE
-      gameLookingForPlayers.lastPlayedAt = new Date();
-
-      await gameLookingForPlayers.save();
-      const game = (await gameLookingForPlayers.populate('players.userData', 'username picture preferences email confirmedEmail turnEmailSent')).populate('chatLogs');
-
-      return game;
+      return updatedGame;
     } catch (err) {
       console.error("Error adding a second player:", err);
       return null;
@@ -248,8 +266,8 @@ const GameService = {
     const gamesToUpdate = [];
 
     for (const game of games) {
-      const winner = game.players.find(player => player.userData._id.toString() !== game.activePlayer?.toString()) as IPopulatedPlayerData;
-      const loser = game.players.find(player => player.userData._id.toString() === game.activePlayer?.toString()) as IPopulatedPlayerData;
+      const winner = game.players.find(player => player.userId !== game.activePlayer?.toString()) as IPopulatedPlayerData;
+      const loser = game.players.find(player => player.userId === game.activePlayer?.toString()) as IPopulatedPlayerData;
       if (!winner || !loser) throw new CustomError(24);
       const winnerData = await User.findById(winner.userData._id);
       const loserData = await User.findById(loser.userData._id);
@@ -289,7 +307,7 @@ const GameService = {
     if (gamesToUpdate.length > 0) await Game.bulkWrite(gamesToUpdate);
 
     for (let i = 0; i < userInfoForEmails.length; i++) {
-      await EmailService.sendGameOverEmail(userInfoForEmails[i], EWinConditions.TIMEOUT);
+      EmailService.sendGameOverEmail(userInfoForEmails[i], EWinConditions.TIMEOUT); // fnf
     }
   }
 

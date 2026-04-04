@@ -4,7 +4,7 @@ import { Request, Response } from "express";
 import { NextFunction } from 'express-serve-static-core';
 import { CustomError } from '../classes/customError';
 import { EGameStatus } from '../enums/game.enums';
-import { IPopulatedUserData } from '../interfaces/gameInterface';
+import { IGameUserData } from '../interfaces/gameInterface';
 import IUser from "../interfaces/userInterface";
 import Game from "../models/gameModel";
 import User from "../models/userModel";
@@ -138,7 +138,7 @@ const UserService = {
           gamesToDelete.add(game._id.toString());
 
           const opponent = game.players.find(player => player.userData._id.toString() !== user._id.toString());
-          const opponentUserData = opponent?.userData as unknown as IPopulatedUserData;
+          const opponentUserData = opponent?.userData as unknown as IGameUserData;
 
           if (opponentUserData?.email && opponentUserData.confirmedEmail) userEmailsToUpdate.add(opponentUserData.email);
           if (opponentUserData?._id) userIdsToUpdate.add(opponentUserData._id.toString());
@@ -188,7 +188,7 @@ const UserService = {
 
     const players = await User.find({}, {
       username: 1,
-      picture: 1,
+      portrait: 1,
       stats: 1
     }).sort(sortType).skip(skip).limit(limit);
 

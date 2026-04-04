@@ -1,5 +1,6 @@
 import { Schema, type } from "@colyseus/schema";
 
+//FIXME: is any of this used?
 /**
  *  USER SCHEMA
  */
@@ -30,7 +31,7 @@ class Unit extends Schema {
 class userData extends Schema {
   @type('string') userId: string;
   @type('string') username: string;
-  @type('string') picture: string;
+  @type('string') portrait: string;
 }
 
 class Faction extends Schema {
