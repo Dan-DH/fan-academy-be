@@ -8,6 +8,8 @@ import { EColyseusMessages } from "../enums/colyseusMessage.enums";
 import { LobbyService } from "../services/lobbyService";
 import GameService from "../services/gameService";
 import { IColyseusOnCreate } from "../interfaces/colyseusInterface";
+import { EGameStatus } from "../enums/game.enums";
+import { CustomError } from "../classes/customError";
 
 export class Lobby extends Room {
   // connectedClients: Set<Client> = new Set(); TODO: clean if not needed
@@ -36,7 +38,7 @@ export class Lobby extends Room {
      */
     this.onMessage(EColyseusMessages.GET_GAMELIST, async (client: Client): Promise<void> => {
       const games = await GameService.getCurrentGamesForGameList((client as any).userId);
-      client.send(EColyseusMessages.GET_GAMELIST, games); // TODO: one or both of the arrays in games could be empty. Check on FE
+      client.send(EColyseusMessages.GAMELIST_UPDATE, games); // TODO: one or both of the arrays in games could be empty. Check on FE
     });
 
     /**
@@ -46,7 +48,7 @@ export class Lobby extends Room {
       console.log(`Turn sent by client ${(client as any).userId}`);
 
       if (message.gameOver) {
-        await this.handleGameOver(message);
+        await this.handleGameOver(message, client);
       } else {
         await this.handleTurn(message);
       }
@@ -84,8 +86,36 @@ export class Lobby extends Room {
      * NEW_GAME_REQUEST
      */
     this.onMessage(EColyseusMessages.NEW_GAME_REQUEST, async (client: Client, message: IColyseusOnCreate): Promise<void> => {
-      // TODO: we might not need the new room
-      const result = await LobbyService.handleNewGameRequest(message);
+      const game = await LobbyService.handleNewGameRequest(message);
+      if (!game) throw new CustomError(24);
+
+      if (game.status === EGameStatus.SEARCHING) {
+        client.send(EColyseusMessages.NEW_GAME_CREATED, game);
+        return;
+      }
+
+      if (game.status === EGameStatus.PLAYING) {
+        client.send(EColyseusMessages.NEW_GAME_STARTED, game);
+        const opponentId = game.players[0].userId;
+        const isOpponentOnline = this.clients.find(c => (c as any).userId === opponentId);
+        const opponentIsFirstPlayer = game.activePlayer === game.players[0].userId;
+        if (isOpponentOnline) {
+          isOpponentOnline.send(EColyseusMessages.NEW_GAME_STARTED, game);
+        } else if (opponentIsFirstPlayer) {
+          LobbyService.offlineTurnNotification(opponentId);
+        }
+        return;
+      }
+
+      if (game.status === EGameStatus.CHALLENGE) {
+        const challengedPlayer = game.players[1].userId;
+        const isPlayerOnline = this.clients.find(c => (c as any).userId === challengedPlayer);
+        if (isPlayerOnline) {
+          isPlayerOnline.send(EColyseusMessages.CHALLENGE_RECEIVED, game);
+        } else {
+          LobbyService.offlineChallengeNotification(challengedPlayer, client.auth.username);
+        }
+      }
     });
     /**
      *
@@ -231,15 +261,18 @@ export class Lobby extends Room {
   /**
    * HANDLING MESSAGES
    */
-  async handleGameOver(message: ITurnMessage): Promise<void> {
+  async handleGameOver(message: ITurnMessage, client: Client): Promise<void> {
     const gameOverUpdate = await LobbyService.handleGameOver(message);
-    this.broadcast(EColyseusMessages.GAME_OVER, gameOverUpdate);
+    const { players, ...messageToSend } = gameOverUpdate;
+    const opponent = players.find(p => p.userId !== (client as any).userId);
+    const opponentOnline = this.clients.find(c => (c as any).userId === opponent?.userId);
+    if (opponentOnline) opponentOnline.send(EColyseusMessages.GAME_OVER, messageToSend);
+    client.send(EColyseusMessages.GAME_OVER, messageToSend);
   }
 
   async handleTurn(message: ITurnMessage): Promise<void> {
-    const isOnline = this.clients.find(c => (c as any).userid === message.newActivePlayer.toString()); // TODO: check if this works // ALSO check why am I sending ObjectIds instead of strings
+    const isOnline = this.clients.find(c => (c as any).userid === message.newActivePlayer);
     const turnUpdate = await LobbyService.handleTurn(message, !!isOnline);
-
     if (isOnline) isOnline.send(EColyseusMessages.SERVER_TURN_UPDATE, turnUpdate);
   }
 }

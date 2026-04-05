@@ -158,7 +158,11 @@ export function getProfilePaginationSortOrder(boardType: ELeaderboardEnum) {
   return (sortTypeMap[boardType] ?? { _id: 1 }) as { [key: string]: SortOrder };
 }
 
-// TODO: any
+export function randomIntFromInterval(min: number, max: number) { // both numbers included
+  return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
+// TODO: any. Also move somewhere else
 export async function updateUserStats(userWon: any, userLost: any, winnerData: IUser, loserData: IUser, winCondition: EWinConditions): Promise<{
   updatedWinner: IUser,
   updatedLoser: IUser

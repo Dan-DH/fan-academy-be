@@ -1,12 +1,10 @@
-import { matchMaker } from "@colyseus/core";
 import { HydratedDocument, Types } from "mongoose";
 import { CustomError } from "../classes/customError";
 import { EFaction, EGameModes, EGameStatus, EWinConditions } from "../enums/game.enums";
 import IGame from "../interfaces/gameInterface";
 import Game from "../models/gameModel";
-import { createNewFactionDeck, updateUserStats } from "../utils/gameUtils";
+import { randomIntFromInterval, updateUserStats } from "../utils/gameUtils";
 import { EmailService } from "../emails/emailService";
-import { DiscordNotificationService } from "./discordNotificationService";
 import User from "../models/userModel";
 import { IColyseusOnCreate } from "../interfaces/colyseusInterface";
 
@@ -75,82 +73,69 @@ const GameService = {
   // POST ACTIONS
   async createGame(params: {
     userId: string,
+    username: string,
+    portrait: string,
     faction: EFaction,
     gameMode: EGameModes,
     opponentId?: string,
-  }): Promise<HydratedDocument<IGame>> {
-    const { userId, faction, gameMode, opponentId } = params;
+  }): Promise<IGame> {
+    const { userId, username, portrait, faction, gameMode, opponentId } = params;
 
     const activeGamesLimit = 50;
-    const playerActiveGames = await Game.find({
-      'players.userData': userId,
-      status: { $ne: EGameStatus.FINISHED }
-    });
-    if (playerActiveGames.length && playerActiveGames.length >= activeGamesLimit) throw new CustomError(22);
 
-    if (opponentId) {
-      const opponentActiveGames = await Game.find({
-        'players.userData': opponentId,
-        status: { $ne: EGameStatus.FINISHED }
-      });
-      if (opponentActiveGames.length && opponentActiveGames.length >= activeGamesLimit) throw new CustomError(22);
-    }
-
-    const userObjId = new Types.ObjectId(userId);
-    const gameId = new Types.ObjectId();
-
-    // TODO:
-    // Create a chat log for the game
-    // const chatLog = new ChatLog({ _id: gameId });
-    // await chatLog.save();
-
-    const newGame = new Game({
-      _id: gameId,
-      players: [
-        {
-          faction,
-          userData: userObjId
-        },
-        ...opponentId ? [{ userData: new Types.ObjectId(opponentId) }] : []
-      ],
-      turnNumber: 1,
-      status: opponentId ? EGameStatus.CHALLENGE : EGameStatus.SEARCHING,
-      createdAt: new Date(),
-      lastPlayedAt: new Date(),
-      chatLogs: gameId,
-      gameMode
-    });
-
-    const result = await newGame.save();
-    await result.populate('players.userData', 'username picture email preferences');
-    if (!result) throw new CustomError(23);
-
-    if (result.status === EGameStatus.CHALLENGE) {
-      matchMaker.presence.publish('newGamePresence', {
-        game: result,
-        userIds: [userId, opponentId]
-      });
-
-      // Send email to challenged user if they are not online but have notifications enabled
-      const challengedUser = result.players[1].userId;
-      const challenger = result.players[0].userId;
-
-      const isOnline = this.clients.find(c => (c as any).userId === challengedUser);
-
-      const acceptsEmails = challengedUser.preferences?.emailNotifications;
-
-      if (!isOnline && acceptsEmails) await EmailService.sendChallengeNotificationEmail(challengedUser.email!, challengedUser.username!, challenger.username!);
-      // Send Discord notification for new challenge
-      try {
-        if (typeof challengedUser.username === 'string') {
-          await DiscordNotificationService.sendNewChallenge(challengedUser.username);
-        } else {
-          console.error('Challenged user username is missing or not a string, Discord notification not sent.');
+    const [limits] = await Game.aggregate([
+      {
+        $match: {
+          'players.userId': { $in: [userId, opponentId] },
+          status: { $ne: EGameStatus.FINISHED }
         }
-      } catch (err) {
-        console.error('Failed to send Discord notification:', err);
+      },
+      {
+        $facet: {
+          userCount: [
+            { $match: { 'players.userId': userId } },
+            { $count: "count" }
+          ],
+          opponentCount: [
+            { $match: { 'players.userId': opponentId } },
+            { $count: "count" }
+          ]
+        }
       }
+    ]);
+
+    const userActiveCount = limits.userCount[0]?.count || 0;
+    const opponentActiveCount = limits.opponentCount[0]?.count || 0;
+
+    if (userActiveCount >= activeGamesLimit || opponentActiveCount >= activeGamesLimit) {
+      throw new CustomError(22);
     }
+
+    const atDate = new Date();
+
+    let result;
+    try {
+      result = await Game.create({
+        players: [
+          {
+            userId,
+            username,
+            portrait,
+            faction
+          },
+          ...opponentId ? [{ userId: opponentId }] : []
+        ],
+        gameMode,
+        status: opponentId ? EGameStatus.CHALLENGE : EGameStatus.SEARCHING,
+        turnNumber: 1,
+        createdAt: atDate,
+        lastPlayedAt: atDate
+      });
+    } catch (error) {
+      console.log('[ERROR]', error);
+      throw new CustomError(23);
+    }
+
     return result;
   },
 
@@ -188,6 +173,7 @@ const GameService = {
           },
           $set: {
             status: EGameStatus.PLAYING,
+            map: randomIntFromInterval(0, 7),
             currentTurn: {
               turnStartSnapshot: {
                 p1: { deck: p1Deck },

@@ -235,10 +235,7 @@ const GameSchema = new Schema({
     enum: EGameModes,
     required: true
   },
-  map: { // TODO: move map to FE
-    type: Number,
-    required: true
-  },
+  map: Number,
   status: {
     type: String,
     required: true

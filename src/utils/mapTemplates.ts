@@ -1,5 +1,6 @@
 import { ETiles } from "../enums/game.enums";
 
+// TODO: move to FE
 /**
   * 2 medium crystals
   * 2 attack tiles

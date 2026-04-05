@@ -88,12 +88,12 @@ export default interface IGame {
   _id: Types.ObjectId;
   players: IPlayerData[];
   gameMode: EGameModes;
-  map: number, // maps to the differnt maps in game. No need for ITile anymore
   status: EGameStatus;
+
+  map?: number, // maps to the differnt maps in game. No need for ITile anymore
   turnNumber: number;
   turnHistory?: IGameTurn[],
-  currentTurn: IGameTurn;
-
+  currentTurn?: IGameTurn;
   gameOver?: IGameOver;
   createdAt: Date;
   finishedAt?: Date;
