@@ -10,11 +10,11 @@ import GameService from "../services/gameService";
 import { IColyseusOnCreate } from "../interfaces/colyseusInterface";
 import { EGameStatus } from "../enums/game.enums";
 import { CustomError } from "../classes/customError";
+import { ObjectId } from "mongoose";
+import { EmailService } from "../emails/emailService";
 
 export class Lobby extends Room {
-  // connectedClients: Set<Client> = new Set(); TODO: clean if not needed
-
-  async onJoin(client: Client, options: { userId: string }) {
+  onJoin(client: Client, options: { userId: string }) {
     (client as any).userId = options.userId; // TypeScript workaround
     this.presence.set(`user:${options.userId}`, 'online');
 
@@ -25,6 +25,7 @@ export class Lobby extends Room {
   }
 
   onCreate(_options: { userId: string }): void {
+    // FIXME: create message interfaces for all messages
     /**
      * PING
      */
@@ -38,7 +39,19 @@ export class Lobby extends Room {
      */
     this.onMessage(EColyseusMessages.GET_GAMELIST, async (client: Client): Promise<void> => {
       const games = await GameService.getCurrentGamesForGameList((client as any).userId);
-      client.send(EColyseusMessages.GAMELIST_UPDATE, games); // TODO: one or both of the arrays in games could be empty. Check on FE
+      client.send(EColyseusMessages.SEND_GAMELIST, games); // TODO: one or both of the arrays in games could be empty. Check on FE
+    });
+
+    /**
+     * GET_GAME
+     */
+    // TODO: implement in FE. Sending only currentTurn atm. We should have a registry in the FE
+    this.onMessage(EColyseusMessages.GET_GAME, async (client: Client, data: {
+      userId: string,
+      gameId: string
+    }): Promise<void> => {
+      const game = await GameService.getGame(data.userId, data.gameId);
+      client.send(EColyseusMessages.SEND_GAME, game);
     });
 
     /**
@@ -113,135 +126,36 @@ export class Lobby extends Room {
         if (isPlayerOnline) {
           isPlayerOnline.send(EColyseusMessages.CHALLENGE_RECEIVED, game);
         } else {
-          LobbyService.offlineChallengeNotification(challengedPlayer, client.auth.username);
+          LobbyService.offlineChallengeNotification(challengedPlayer, message.username);
         }
       }
     });
+
     /**
-     *
-    // TODO:
-    // Accessing a game
-    // Creating a game -> Includes challenges
-          check for games looking for players -> addPlayerTwo
-              starting a game
-          else gameservice.createGame
-    // Starting a game -> includes challenge accepted?
-          mewssage player1 if first player
-    // Updating an existing game ---> GameService.getColyseusRoom
-    // Game ending update
-    // Deleting a game / challenge
-    // User deleted
-    */
-
-    // // Updating on a game ending
-    // this.presence.subscribe('gameOverPresence', (message: {
-    //   gameId: ObjectId
-    //   previousTurn: IGameState[],
-    //   userIds: string[],
-    //   turnNumber: number,
-    //   lastPlayedAt: Date,
-    //   gameOver: IGameOver
-    // }) => {
-    //   // console.log('MESSAGE ->', message);
-    //   console.log(`[Lobby ${this.roomId}] Received subscribed gameOverPresence message`);
-
-    //   const clientsToExclude: Client[] = [];
-    //   this.connectedClients.forEach(client => {
-    //     if (!message.userIds.includes((client as any).userId)) clientsToExclude.push(client);
-    //   });
-
-    //   this.broadcast('gameOverUpdate', message, { except: clientsToExclude });
-    // });
-
-    // // Deleting a challenge
-    // this.presence.subscribe('gameDeletedPresence', (message: {
-    //   gameId: ObjectId,
-    //   userIds: string[]
-    // }) => {
-    //   console.log(`[Lobby ${this.roomId}] Received subscribed gameDeletedPresence message`);
-
-    //   const clientsToExclude: Client[] = [];
-    //   this.connectedClients.forEach(client => {
-    //     if (!message.userIds.includes((client as any).userId)) clientsToExclude.push(client);
-    //   });
-
-    //   this.broadcast('gameDeletedUpdate', message, { except: clientsToExclude });
-    // });
-
-    // this.onMessage("gameDeletedMessage", async (client: Client, message: {
-    //   userId: string,
-    //   gameId: string
-    // }) => {
-    //   console.log('gameDeletedMessage logs', message);
-    //   const result = await GameService.deleteGame(message.userId, message.gameId);
-
-    //   this.presence.publish('gameDeletedPresence', {
-    //     gameId: message.gameId,
-    //     userIds: result
-    //   });
-    // });
-
-    // this.onMessage("challengeAcceptedMessage", async (client: Client, message: {
-    //   userId: string,
-    //   gameId: string,
-    //   faction: EFaction
-    // }) => {
-    //   console.log('challengeAcceptedMessage logs', message);
-    //   const userId = message.userId ;
-    //   const gameId = message.gameId;
-    //   const faction = message.faction as EFaction;
-
-    //   if (!userId || !gameId || !faction) throw new CustomError(23);
-
-    //   const game = await GameService.getGame(userId, gameId);
-    //   if (!game) throw new CustomError(24);
-
-    //   const result = await GameService.addPlayerTwo(game, faction as EFaction, userId);
-
-    //   const userIds = result?.players.map(player => { return player.userData._id.toString();});
-    //   this.presence.publish('newGamePresence', {
-    //     game: result,
-    //     userIds
-    //   });
-    // });
-
-    // // Deleting a user
-    // this.presence.subscribe('userDeletedPresence', (message: {
-    //   userIds: string[],
-    //   gameIds: string[]
-    // }) => {
-    //   console.log(`[Lobby ${this.roomId}] Received subscribed userDeletedPresence message`);
-    //   console.log('MESSAGE', message);
-
-    //   const clientsToExclude: Client[] = [];
-    //   this.connectedClients.forEach(client => {
-    //     if (!message.userIds.includes((client as any).userId)) clientsToExclude.push(client);
-    //   });
-
-    //   this.logConnectedClients();
-    //   console.log('clientsTOExclude', clientsToExclude);
-    //   this.broadcast('userDeletedUpdate', message, { except: clientsToExclude });
-    // });
-
-    // // Keep connection alive
-    // this.onMessage("ping", (client: Client) => {
-    //   console.log(`Received lobby ping from user ${(client as any).userId}`);
-    //   this.broadcast('pong');
-    // });
+     * DELETE_GAME
+     */
+    this.onMessage(EColyseusMessages.DELETE_GAME_REQUEST, async (_client: Client, message: {
+      gameId: string,
+      userId: string,
+      token: string
+      challengerId?: string, // TODO: pass it here to simplify BE query
+    }) => {
+      GameService.deleteGame(message.userId, message.gameId); // fnf
+      if (!message.challengerId) return;
+      const isOnline = this.clients.find(c => (c as any).userId === message.challengerId);
+      isOnline?.send(EColyseusMessages.CHALLENGE_REFUSED, message.gameId);
+    });
   };
 
-  // Handle client leaving
   onLeave(client: Client, _consented: boolean): void {
     console.log(`[Lobby ${this.roomId}] Client left: ${(client as any).userId}`);
     console.log(`[Lobby ${this.roomId}) Connected clients: ${this.clients}`);
   }
 
-  // Handle lobby disposal
   onDispose(): void {
     console.log("[Lobby] Room disposed", this.roomId);
   }
 
-  // Room auth
   static async onAuth(_token: string, options: any, _context: AuthContext): Promise<JwtPayload | boolean> {
     try {
       const user = await JWT.verify(options.token) as JwtPayload;
@@ -274,5 +188,24 @@ export class Lobby extends Room {
     const isOnline = this.clients.find(c => (c as any).userid === message.newActivePlayer);
     const turnUpdate = await LobbyService.handleTurn(message, !!isOnline);
     if (isOnline) isOnline.send(EColyseusMessages.SERVER_TURN_UPDATE, turnUpdate);
+  }
+
+  async handleUserDelete(data: {
+    playersToNotify: {
+      _id: ObjectId,
+      email: string
+    }[],
+    deletedUserId: string;
+  }): Promise<void> {
+    if (!data.playersToNotify.length) return;
+
+    const offlinePlayers: string[] = [];
+
+    data.playersToNotify.forEach(p => {
+      const isOnline = this.clients.find(c => (c as any).userId === p._id.toString());
+      if (isOnline) { isOnline.send(EColyseusMessages.DELETED_GAME_UPDATE, data.deletedUserId); } else { offlinePlayers.push(p.email);} // TODO: a single message to the FE to delete all games. Should probably have a popup informing them
+    });
+
+    if (offlinePlayers.length) EmailService.sendGameDeletionEmail([...offlinePlayers]); // fnf
   }
 }

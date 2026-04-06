@@ -1,8 +1,6 @@
 import { SortOrder } from "mongoose";
 import { EFaction, EHeroes, EItems, EWinConditions } from "../enums/game.enums";
 import { ELeaderboardEnum } from "../enums/leaderboard.enums";
-
-import { CustomError } from "../classes/customError";
 import IUser from "../interfaces/userInterface";
 import { updateELORatings } from "../game/elo";
 import User from "../models/userModel";
@@ -162,14 +160,9 @@ export function randomIntFromInterval(min: number, max: number) { // both number
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
-// TODO: any. Also move somewhere else
-export async function updateUserStats(userWon: any, userLost: any, winnerData: IUser, loserData: IUser, winCondition: EWinConditions): Promise<{
-  updatedWinner: IUser,
-  updatedLoser: IUser
-}> {
+// TODO: any. Also move somewhere else // FIXME: All timeout updates could be handled with one bulk query, even if it means some code duplication
+export async function updateUserStats(userWon: any, userLost: any, winnerData: IUser, loserData: IUser, winCondition: EWinConditions): Promise<void> {
   const { winnerNewElo, loserNewElo } = updateELORatings(winnerData!, userWon.faction!, loserData!, userLost.faction!);
-
-  console.log('winnerNewElo', winnerNewElo);
 
   const addWinnerNewRating = { [ `stats.factions.${userWon.faction}.rating`]: winnerNewElo.rating };
   const addwinnerFactionTotalGames = { [`stats.factions.${userWon.faction}.games`]: 1 };
@@ -177,35 +170,6 @@ export async function updateUserStats(userWon: any, userLost: any, winnerData: I
   const addWinnerFactionGame = { [`stats.factions.${userWon.faction!}.opponentFactions.${userLost.faction!}.games`]: 1 };
   const addWinnerFactionVictory = { [`stats.factions.${userWon.faction!}.opponentFactions.${userLost.faction!}.totalWins`]: 1 };
   const addWinnerFactionVictoryType = { [`stats.factions.${userWon.faction!}.opponentFactions.${userLost.faction!}.wins.${winCondition}`]: 1 };
-  const updatedWinner = await User.findByIdAndUpdate(
-    userWon.userData._id,
-    {
-      $set: { ...addWinnerNewRating },
-      $inc: {
-        'stats.totalGames': 1,
-        'stats.totalWins': 1,
-        ...addwinnerFactionTotalGames,
-        ...addwinnerFactionTotalWins,
-        ...addWinnerFactionGame,
-        ...addWinnerFactionVictory,
-        ...addWinnerFactionVictoryType
-      }
-    },
-    { runValidators: true }
-  );
-
-  console.log('query', {
-    $set: { ...addWinnerNewRating },
-    $inc: {
-      'stats.totalGames': 1,
-      'stats.totalWins': 1,
-      ...addwinnerFactionTotalGames,
-      ...addwinnerFactionTotalWins,
-      ...addWinnerFactionGame,
-      ...addWinnerFactionVictory,
-      ...addWinnerFactionVictoryType
-    }
-  });
 
   const addLoserNewRating = { [ `stats.factions.${userLost.faction}.rating`]: loserNewElo.rating };
   const addLoserFactionTotalGames = { [`stats.factions.${userLost.faction}.games`]: 1 };
@@ -213,38 +177,49 @@ export async function updateUserStats(userWon: any, userLost: any, winnerData: I
   const addLoserFactionGame = { [`stats.factions.${userLost.faction!}.opponentFactions.${userWon.faction!}.games`]: 1 };
   const addLoserFactionLossType = { [`stats.factions.${userLost.faction!}.opponentFactions.${userWon.faction!}.loses.${winCondition}`]: 1 };
   const addLoserFactionLoss = { [`stats.factions.${userLost.faction!}.opponentFactions.${userWon.faction!}.totalLoses`]: 1 };
-  const updatedLoser = await User.findByIdAndUpdate(
-    userLost.userData._id,
+
+  await User.bulkWrite([
     {
-      $set: { ...addLoserNewRating },
-      $inc: {
-        'stats.totalGames': 1,
-        'stats.totalLoses': 1,
-        ...addLoserFactionTotalGames,
-        ...addLoserFactionTotalLoses,
-        ...addLoserFactionGame,
-        ...addLoserFactionLoss,
-        ...addLoserFactionLossType
+      updateOne: {
+        filter: { _id: userWon.userData._id },
+        update: {
+          $set: { ...addWinnerNewRating },
+          $inc: {
+            'stats.totalGames': 1,
+            'stats.totalWins': 1,
+            ...addwinnerFactionTotalGames,
+            ...addwinnerFactionTotalWins,
+            ...addWinnerFactionGame,
+            ...addWinnerFactionVictory,
+            ...addWinnerFactionVictoryType
+          }
+        }
       }
-    }, { runValidators: true }
-  );
-
-  console.log('loser query', {
-    $set: { ...addLoserNewRating },
-    $inc: {
-      'stats.totalGames': 1,
-      'stats.totalLoses': 1,
-      ...addLoserFactionTotalGames,
-      ...addLoserFactionTotalLoses,
-      ...addLoserFactionGame,
-      ...addLoserFactionLoss,
-      ...addLoserFactionLossType
+    },
+    {
+      updateOne: {
+        filter: { _id: userLost.userData._id },
+        update: {
+          $set: { ...addLoserNewRating },
+          $inc: {
+            'stats.totalGames': 1,
+            'stats.totalLoses': 1,
+            ...addLoserFactionTotalGames,
+            ...addLoserFactionTotalLoses,
+            ...addLoserFactionGame,
+            ...addLoserFactionLoss,
+            ...addLoserFactionLossType
+          }
+        }
+      }
     }
-  });
+  ], { ordered: false });
 
-  if (!updatedWinner || !updatedLoser) throw new CustomError(24);
-  return {
-    updatedWinner,
-    updatedLoser
-  };
+  // const [updatedWinner, updatedLoser] = await User.find({ _id: { $in: [userWon.userData._id, userLost.userData._id] } }).lean();
+
+  // if (!updatedWinner || !updatedLoser) throw new CustomError(24);
+  // return {
+  //   updatedWinner,
+  //   updatedLoser
+  // };
 };

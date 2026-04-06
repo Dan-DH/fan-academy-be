@@ -4,17 +4,20 @@ export enum EColyseusMessages {
   CLIENT_TURN_UPDATE = 'clientTurnUpdate',
   CHAT_MESSAGE_SENT = 'chatMessageSent',
   NEW_GAME_REQUEST = 'newGameRequest',
-  GET_GAMELIST = 'getGames',
-  CHALLENGE_REFUSED = 'challengeRefused',
+  GET_GAMELIST = 'getGameList',
+  GET_GAME = 'getGame',
+  DELETE_GAME_REQUEST = 'deleteGameRequest',
 
   // SENT BY THE SERVER
   PONG = 'pong',
-  GAMELIST_UPDATE = 'gamelistUpdate',
+  SEND_GAMELIST = 'sendGamelist',
+  SEND_GAME = 'sendGame',
   SERVER_TURN_UPDATE = 'serverTurnUpdate',
   GAME_OVER = 'gameOver',
   CHAT_MESSAGE_RECEIVED = 'chatMessageReceived',
   NEW_GAME_STARTED = 'newGameStarted',
   NEW_GAME_CREATED = 'newGameCreated', // used for new games and challenges as well
   CHALLENGE_RECEIVED = 'challengeReceived',
-  CHALLENGE_REFUSED_UPDATE = 'challengeRefusedUpdate'
+  CHALLENGE_REFUSED = 'challengeRefused',
+  DELETED_GAME_UPDATE = 'deletedGameUpdate'
 }

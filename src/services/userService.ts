@@ -1,19 +1,17 @@
-import { matchMaker } from '@colyseus/core';
 import { hash } from 'bcrypt';
 import { Request, Response } from "express";
 import { NextFunction } from 'express-serve-static-core';
 import { CustomError } from '../classes/customError';
 import { EGameStatus } from '../enums/game.enums';
-import { IGameUserData } from '../interfaces/gameInterface';
 import IUser from "../interfaces/userInterface";
 import Game from "../models/gameModel";
 import User from "../models/userModel";
 import { generateToken } from '../middleware/jwt';
 import { generateConfirmationLink, generateRecoveryCode } from '../utils/tokenGeneration';
 import { EmailService } from '../emails/emailService';
-import { DiscordNotificationService } from './discordNotificationService';
 import { ELeaderboardEnum } from '../enums/leaderboard.enums';
 import { getProfilePaginationSortOrder } from '../utils/gameUtils';
+import { ObjectId } from 'mongoose';
 
 const UserService = {
   async signup(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -122,54 +120,53 @@ const UserService = {
     return res.send(result);
   },
 
-  async deleteUser(user: IUser, next: NextFunction): Promise<void> {
-    try {
-      // Find and remove open games / and challenges, and inform the other players
-      const userIdsToUpdate = new Set<string>();
-      const userEmailsToUpdate = new Set<string>();
-      const opponentUsernamesToUpdate = new Set<string>();
-      const gamesToDelete = new Set<string>();
-      const affectedGames = await Game.find({ 'players.userData': user._id }).populate('players.userData', 'email confirmedEmail username');
-
-      if (affectedGames.length) {
-        affectedGames.forEach(game => {
-          if (game.status === EGameStatus.SEARCHING || game.status === EGameStatus.FINISHED) return;
-
-          gamesToDelete.add(game._id.toString());
-
-          const opponent = game.players.find(player => player.userData._id.toString() !== user._id.toString());
-          const opponentUserData = opponent?.userData as unknown as IGameUserData;
-
-          if (opponentUserData?.email && opponentUserData.confirmedEmail) userEmailsToUpdate.add(opponentUserData.email);
-          if (opponentUserData?._id) userIdsToUpdate.add(opponentUserData._id.toString());
-          if (opponentUserData?.username) opponentUsernamesToUpdate.add(opponentUserData.username);
-        });
-
-        await Game.deleteMany({ 'players.userData': user._id });
-      }
-
-      const deletedUser: IUser | undefined | null = await User.findOneAndDelete({ _id: user._id });
-      if (!deletedUser) throw new CustomError(40);
-      // Send email to user
-      await EmailService.sendAccountDeletionEmail(deletedUser.email);
-
-      if (userIdsToUpdate.size > 0) {
-        await EmailService.sendGameDeletionEmail([...userEmailsToUpdate]);
-
-        try {
-          for (const username of opponentUsernamesToUpdate) {
-            await DiscordNotificationService.sendGameDeleted(username);
-          }
-        } catch (err) {
-          console.error('Failed to send Discord account deletion notification:', err);
+  async deleteUser(userId: string, next: NextFunction): Promise<{
+    users: {
+      _id: ObjectId,
+      email: string
+    }[],
+    deletedUserId: string
+  } | void > {
+    try{
+      const affectedGames = await Game.find(
+        {
+          'players.userId': userId,
+          status: { $nin: [EGameStatus.SEARCHING, EGameStatus.FINISHED] }
+        },
+        {
+          gameStatus: 1,
+          players: 1
         }
+      ).lean();
 
-        // Send a message to update the game list of the affected players
-        matchMaker.presence.publish('userDeletedPresence', {
-          userIds: [...userIdsToUpdate],
-          gameIds: [...gamesToDelete]
-        });
-      }
+      if (!affectedGames.length) return;
+
+      const userIdsToUpdate = [...new Set(affectedGames.flatMap(g => g.players).map(p => p.userId).filter(id => id && id !== userId))];
+
+      const usersToNotify = await User.find({
+        _id: { $in: Array.from(userIdsToUpdate) },
+        'preferences.emailNotifications': { $ne: false },
+        confirmedEmail: { $ne: false }
+      }, {
+        _id: 1,
+        email: 1
+      }).lean() as unknown as {
+        _id: ObjectId, // TODO: might be an objectid
+        email: string
+      }[];
+
+      console.log('userEmails', usersToNotify); // FIXME: check and remove
+
+      const result = {
+        users: usersToNotify,
+        deletedUserId: userId
+      };
+
+      Game.deleteMany({ 'players.userId': userId }); // fnf. We also remove finished games
+      User.findOneAndDelete({ _id: userId }); // fnf
+
+      // await DiscordNotificationService.sendGameDeleted(username);
+      return result;
     } catch (err) {
       console.log(err);
       next(err);

@@ -63,7 +63,7 @@ router.post('/delete', isAuthenticated, async (req: Request, res: Response, next
   const user = req.user as IUser;
   if (!user) throw new CustomError(26);
 
-  await UserService.deleteUser(user, next);
+  await UserService.deleteUser(user._id.toString(), next);
 
   return res.send({ success: true });
 });

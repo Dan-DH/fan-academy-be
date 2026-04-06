@@ -9,7 +9,7 @@ export interface IGameOver {
 export interface ITurnMessage {
   _id: Types.ObjectId;
   currentTurn: IGameTurn;
-  turnNumber: number;
+  turnNumber: number; // TODO: don't need to send this, I can increment through the query
   actions: ITurnAction[];
   lastPlayedAt: Date; // TODO: get from FE
   newActivePlayer: Types.ObjectId;

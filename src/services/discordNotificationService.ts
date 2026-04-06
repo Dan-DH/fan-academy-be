@@ -20,7 +20,7 @@ export class DiscordNotificationService {
 
     console.log(`[Discord] Notify ${username}: ${notification.title} - ${notification.summary}`);
 
-    // Record delivery attempt // TODO: can I do findAndUpdate instead of create
+    // Record delivery attempt
     await NotificationDelivery.create({
       notificationId: notification._id,
       username,

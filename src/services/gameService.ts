@@ -1,9 +1,9 @@
-import { HydratedDocument, Types } from "mongoose";
+import { Types } from "mongoose";
 import { CustomError } from "../classes/customError";
 import { EFaction, EGameModes, EGameStatus, EWinConditions } from "../enums/game.enums";
-import IGame from "../interfaces/gameInterface";
+import IGame, { IPlayerData } from "../interfaces/gameInterface";
 import Game from "../models/gameModel";
-import { randomIntFromInterval, updateUserStats } from "../utils/gameUtils";
+import { createFactionDeck, randomIntFromInterval, updateUserStats } from "../utils/gameUtils";
 import { EmailService } from "../emails/emailService";
 import User from "../models/userModel";
 import { IColyseusOnCreate } from "../interfaces/colyseusInterface";
@@ -17,7 +17,7 @@ const GameService = {
       'players.userId': userId,
       status: EGameStatus.PLAYING,
       lastPlayedAt: { $lt: oneWeekAgo }
-    }).lean(); // TODO: project only needed fields
+    }, { players: 1 }).lean(); // TODO: project only needed fields
 
     if (timedOutGames) await this.handleTimedOutGames(timedOutGames);
 
@@ -60,14 +60,13 @@ const GameService = {
     return result;
   },
 
-  async getGame(userId: string, roomId: string): Promise<HydratedDocument<IGame> | null> {
-    const userObjId = new Types.ObjectId(userId);
-    const roomObjId = new Types.ObjectId(roomId);
-    const result = await Game.findOne({
-      _id: roomObjId,
-      "players.userData": userObjId
-    });
-    return result;
+  async getGame(userId: string, gameId: string): Promise<IGame> {
+    const game = await Game.findOne({
+      _id: gameId,
+      'players.userId': userId
+    }, { currentTurn: 1 }).lean();
+    if (!game) throw new CustomError(24);
+    return game;
   },
 
   // POST ACTIONS
@@ -148,8 +147,8 @@ const GameService = {
       }).lean();
       if (!playerTwo) throw new CustomError(40);
 
-      const p1Deck = createNewFactionDeck(game.players[0].userId, game.players[0].faction);
-      const p2Deck = createNewFactionDeck(options.userId, options.faction);
+      const p1Deck = createFactionDeck(game.players[0].userId, game.players[0].faction!);
+      const p2Deck = createFactionDeck(options.userId, options.faction);
 
       // TODO: move this somewhere else
       const getActivePlayer = (p1: string, p2: string) => {
@@ -219,51 +218,36 @@ const GameService = {
     return result;
   },
 
-  async deleteGame(userId: string, gameId: string): Promise<string[]> {
-    const gameObjectId = new Types.ObjectId(gameId);
-    const userObjectId = new Types.ObjectId(userId);
-
-    const game: IGame | null = await Game.findOne({
-      _id: gameObjectId,
-      players: { $elemMatch: { userData: { $eq: userObjectId } } },
-      $or: [
-        { status: EGameStatus.SEARCHING },
-        { status: EGameStatus.CHALLENGE }
-      ]
+  async deleteGame(userId: string, gameId: string): Promise<void> {
+    Game.deleteOne({
+      _id: gameId,
+      'players.userId': userId,
+      status: { $in: [EGameStatus.SEARCHING, EGameStatus.CHALLENGE] }
     });
-    if (!game) throw new CustomError(24);
-
-    const deletedGame = await Game.findByIdAndDelete(game._id);
-    if (!deletedGame) throw new CustomError(24);
-
-    await ChatLog.findByIdAndDelete(game._id);
-
-    const result = deletedGame.players.map(player => { return player.userData.toString(); });
-    return result;
   },
 
   async handleTimedOutGames(games: IGame[]): Promise<void> {
     const userInfoForEmails: {
-      winner: IPopulatedPlayerData,
-      loser: IPopulatedPlayerData,
+      winner: IPlayerData,
+      loser: IPlayerData,
       emails: string[]
     }[] = [];
 
     const gamesToUpdate = [];
 
     for (const game of games) {
-      const winner = game.players.find(player => player.userId !== game.activePlayer?.toString()) as IPopulatedPlayerData;
-      const loser = game.players.find(player => player.userId === game.activePlayer?.toString()) as IPopulatedPlayerData;
+      const winner = game.players.find(player => player.userId !== game.activePlayer?.toString());
+      const loser = game.players.find(player => player.userId === game.activePlayer?.toString());
       if (!winner || !loser) throw new CustomError(24);
-      const winnerData = await User.findById(winner.userData._id);
-      const loserData = await User.findById(loser.userData._id);
+      const winnerData = await User.findById(winner.userId);
+      const loserData = await User.findById(loser.userId);
       if (!winnerData || !loserData) throw new CustomError(24);
 
       if (game.gameMode === EGameModes.RANKED) await updateUserStats(winner, loser, winnerData, loserData, EWinConditions.TIMEOUT);
 
       const emails = [];
-      if (winnerData?.preferences.emailNotifications) emails.push(winner.userData.email!);
-      if (loserData?.preferences.emailNotifications) emails.push(loser.userData.email!);
+      if (winnerData?.preferences.emailNotifications && winnerData?.confirmedEmail) emails.push(winnerData.email!);
+      if (loserData?.preferences.emailNotifications && loserData?.confirmedEmail) emails.push(loserData.email!);
 
       if (emails.length) {
         userInfoForEmails.push({
@@ -281,7 +265,7 @@ const GameService = {
               status: EGameStatus.FINISHED,
               gameOver: {
                 winCondition: EWinConditions.TIMEOUT,
-                winner: winner?.userData._id?.toString()
+                winner: winner.userId
               },
               finishedAt: new Date()
             }
@@ -293,10 +277,9 @@ const GameService = {
     if (gamesToUpdate.length > 0) await Game.bulkWrite(gamesToUpdate);
 
     for (let i = 0; i < userInfoForEmails.length; i++) {
-      EmailService.sendGameOverEmail(userInfoForEmails[i], EWinConditions.TIMEOUT); // fnf
+      await EmailService.sendGameOverEmail(userInfoForEmails[i], EWinConditions.TIMEOUT);
     }
   }
-
 };
 
 export default GameService;
