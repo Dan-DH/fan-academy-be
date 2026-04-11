@@ -73,8 +73,7 @@ export class Lobby extends Room {
     this.onMessage(EColyseusMessages.CHAT_MESSAGE_SENT, async (client: Client, message: {
       userId: string, // TODO: turn this into the player receiving the message id
       gameId: string, // TODO: get from FE
-      message: string,
-      token: string // TODO: is this being used?
+      message: string
     }): Promise<void> => {
       console.log(`Chat sent by client ${client.auth._id} in room ${this.roomId}`);
       const sanitizedMessage = sanitizeInput(message.message);
@@ -136,8 +135,7 @@ export class Lobby extends Room {
      */
     this.onMessage(EColyseusMessages.DELETE_GAME_REQUEST, async (_client: Client, message: {
       gameId: string,
-      userId: string,
-      token: string
+      userId: string
       challengerId?: string, // TODO: pass it here to simplify BE query
     }) => {
       GameService.deleteGame(message.userId, message.gameId); // fnf
