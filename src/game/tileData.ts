@@ -1,7 +1,7 @@
 import { ETiles } from "../enums/game.enums";
-import { ITile } from "../interfaces/gameInterface";
 
-export function createTileData(data: ITile): ITile {
+// TODO:
+export function createTileData(data: any): any {
   const tileType = ETiles.BASIC;
   const obstacle = false;
   const hero = undefined;

@@ -1,7 +1,5 @@
 import { AuthContext, Client, Room } from "@colyseus/core";
 import { ITurnMessage } from "../interfaces/gameInterface";
-import User from "../models/userModel";
-import { sanitizeInput } from "../middleware/sanitizeInput";
 import { JWT } from "@colyseus/auth";
 import { JwtPayload } from "jsonwebtoken";
 import { EColyseusMessages } from "../enums/colyseusMessage.enums";
@@ -12,6 +10,8 @@ import { EGameStatus } from "../enums/game.enums";
 import { CustomError } from "../classes/customError";
 import { ObjectId } from "mongoose";
 import { EmailService } from "../emails/emailService";
+import { recursiveSanitizeInput } from "../middleware/sanitizeInput";
+import User from "../models/userModel";
 
 export class Lobby extends Room {
   onJoin(client: Client, options: { userId: string }) {
@@ -38,7 +38,11 @@ export class Lobby extends Room {
      * GET_GAMELIST
      */
     this.onMessage(EColyseusMessages.GET_GAMELIST, async (client: Client): Promise<void> => {
+      console.log('GET GAMELIST MESSAGE RECEIVED');
+      console.log('UserId', (client as any).userId);
+
       const games = await GameService.getCurrentGamesForGameList((client as any).userId);
+      console.log('GAMES', games);
       client.send(EColyseusMessages.SEND_GAMELIST, games); // TODO: one or both of the arrays in games could be empty. Check on FE
     });
 
@@ -76,7 +80,7 @@ export class Lobby extends Room {
       message: string
     }): Promise<void> => {
       console.log(`Chat sent by client ${client.auth._id} in room ${this.roomId}`);
-      const sanitizedMessage = sanitizeInput(message.message);
+      const sanitizedMessage = recursiveSanitizeInput(message.message);
 
       // Update the chat log on the db, or create one if none exists
       const messageToPush = {

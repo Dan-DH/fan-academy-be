@@ -1,5 +1,5 @@
 import { SortOrder } from "mongoose";
-import { EFaction, EHeroes, EItems, EWinConditions } from "../enums/game.enums";
+import { ECrystalType, EFaction, EHeroes, EItems, EWinConditions } from "../enums/game.enums";
 import { ELeaderboardEnum } from "../enums/leaderboard.enums";
 import IUser from "../interfaces/userInterface";
 import { updateELORatings } from "../game/elo";
@@ -158,6 +158,16 @@ export function getProfilePaginationSortOrder(boardType: ELeaderboardEnum) {
 
 export function randomIntFromInterval(min: number, max: number) { // both numbers included
   return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
+export function mapCrystalTypeToHealth(type: ECrystalType): number {
+  const result = {
+    [ECrystalType.CRYSTAL]: 4500,
+    [ECrystalType.CRYSTAL_BIG]: 9000,
+    [ECrystalType.CRYSTAL_SMALL]: 3000
+  };
+
+  return result[type];
 }
 
 // TODO: any. Also move somewhere else // FIXME: All timeout updates could be handled with one bulk query, even if it means some code duplication

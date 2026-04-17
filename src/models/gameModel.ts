@@ -1,6 +1,6 @@
 import mongoose, { Types } from 'mongoose';
 import IGame from '../interfaces/gameInterface';
-import { EActionClass, EActionType, EClass, EFaction, EGameModes, EWinConditions } from '../enums/game.enums';
+import { EActionClass, EActionType, EGameModes, EWinConditions } from '../enums/game.enums';
 
 const { Schema, model } = mongoose;
 
@@ -23,11 +23,6 @@ const GameOverSchema = new Schema({
  * CrystalSchema
  */
 const CrystalSchema = new Schema({
-  class: {
-    type: String,
-    enume: EClass,
-    required: true
-  },
   unitId: {
     type: String,
     required: true
@@ -55,11 +50,6 @@ const ItemSchema = new Schema({
   boardPosition: {
     type: Number,
     required: true
-  },
-  class: {
-    type: String,
-    enume: EClass,
-    required: true
   }
 }, { _id: false });
 
@@ -85,12 +75,7 @@ const HeroSchema = new Schema({
     default: 0
   },
   engineerShield: String,
-  shieldingAlly: String,
-  class: {
-    type: String,
-    enume: EClass,
-    required: true
-  }
+  shieldingAlly: String
 }, { _id: false });
 
 /**
@@ -130,13 +115,13 @@ const HeroOrCrystalSchema = new Schema(
 /**
  * FactionSchema
  */
-const FactionSchema = new Schema({
-  factionName: {
-    type: String,
-    enum: EFaction,
-    required: true
-  }
-}, { _id: false });
+// const FactionSchema = new Schema({
+//   factionName: {
+//     type: String,
+//     enum: EFaction,
+//     required: true
+//   }
+// }, { _id: false });
 
 /**
  * TurnActionSchema
@@ -255,12 +240,12 @@ const GameSchema = new Schema({
 });
 
 // Discriminators
-(FactionSchema.path('unitsInHand') as mongoose.Schema.Types.DocumentArray).discriminator('hero', HeroSchema);
-(FactionSchema.path('unitsInHand') as mongoose.Schema.Types.DocumentArray).discriminator('item', ItemSchema);
-(FactionSchema.path('unitsInDeck') as mongoose.Schema.Types.DocumentArray).discriminator('hero', HeroSchema);
-(FactionSchema.path('unitsInDeck') as mongoose.Schema.Types.DocumentArray).discriminator('item', ItemSchema);
-(FactionSchema.path('boardState') as mongoose.Schema.Types.DocumentArray).discriminator('hero', HeroSchema);
-(FactionSchema.path('boardState') as mongoose.Schema.Types.DocumentArray).discriminator('crystal', CrystalSchema);
+(GamePlayerResourcesSchema.path('hand') as mongoose.Schema.Types.DocumentArray).discriminator('hero', HeroSchema);
+(GamePlayerResourcesSchema.path('hand') as mongoose.Schema.Types.DocumentArray).discriminator('item', ItemSchema);
+(GamePlayerResourcesSchema.path('deck') as mongoose.Schema.Types.DocumentArray).discriminator('hero', HeroSchema);
+(GamePlayerResourcesSchema.path('deck') as mongoose.Schema.Types.DocumentArray).discriminator('item', ItemSchema);
+(GameStateSchema.path('boardState') as mongoose.Schema.Types.DocumentArray).discriminator('hero', HeroSchema);
+(GameStateSchema.path('boardState') as mongoose.Schema.Types.DocumentArray).discriminator('crystal', CrystalSchema);
 
 // Indexes
 GameSchema.index({ gameMode: 1 });

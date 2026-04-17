@@ -1,6 +1,5 @@
-import { ETiles } from "../enums/game.enums";
+import { ECrystalType } from "../enums/game.enums";
 
-// TODO: move to FE
 /**
   * 2 medium crystals
   * 2 attack tiles
@@ -9,69 +8,20 @@ import { ETiles } from "../enums/game.enums";
   */
 const map1 = [
   {
-    row: 0,
-    col: 2,
-    tileType: ETiles.CRYSTAL
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 2
   },
   {
-    row: 0,
-    col: 6,
-    tileType: ETiles.CRYSTAL
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 6
   },
   {
-    row: 4,
-    col: 6,
-    tileType: ETiles.CRYSTAL
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 42
   },
   {
-    row: 4,
-    col: 2,
-    tileType: ETiles.CRYSTAL
-  },
-  {
-    row: 1,
-    col: 0,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 3,
-    col: 8,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 3,
-    col: 0,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 1,
-    col: 8,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 1,
-    col: 2,
-    tileType: ETiles.POWER
-  },
-  {
-    row: 3,
-    col: 6,
-    tileType: ETiles.POWER
-  },
-  {
-    row: 2,
-    col: 1,
-    tileType: ETiles.PHYSICAL_RESISTANCE
-  },
-  {
-    row: 2,
-    col: 7,
-    tileType: ETiles.PHYSICAL_RESISTANCE
-  },
-  {
-    row: 2,
-    col: 4,
-    tileType: ETiles.CRYSTAL_DAMAGE
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 38
   }
 ];
 
@@ -83,64 +33,20 @@ const map1 = [
   */
 const map2 = [
   {
-    row: 1,
-    col: 2,
-    tileType: ETiles.CRYSTAL
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 11
   },
   {
-    row: 1,
-    col: 6,
-    tileType: ETiles.CRYSTAL
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 15
   },
   {
-    row: 3,
-    col: 7,
-    tileType: ETiles.CRYSTAL
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 34
   },
   {
-    row: 3,
-    col: 1,
-    tileType: ETiles.CRYSTAL
-  },
-  {
-    row: 0,
-    col: 0,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 0,
-    col: 8,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 4,
-    col: 0,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 4,
-    col: 8,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 2,
-    col: 2,
-    tileType: ETiles.POWER
-  },
-  {
-    row: 2,
-    col: 6,
-    tileType: ETiles.POWER
-  },
-  {
-    row: 0,
-    col: 4,
-    tileType: ETiles.MAGICAL_RESISTANCE
-  },
-  {
-    row: 4,
-    col: 4,
-    tileType: ETiles.CRYSTAL_DAMAGE
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 28
   }
 ];
 
@@ -153,69 +59,20 @@ const map2 = [
   */
 const map3 = [
   {
-    row: 0,
-    col: 3,
-    tileType: ETiles.CRYSTAL
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 3
   },
   {
-    row: 2,
-    col: 0,
-    tileType: ETiles.CRYSTAL
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 18
   },
   {
-    row: 2,
-    col: 8,
-    tileType: ETiles.CRYSTAL
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 26
   },
   {
-    row: 4,
-    col: 5,
-    tileType: ETiles.CRYSTAL
-  },
-  {
-    row: 1,
-    col: 0,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 3,
-    col: 8,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 3,
-    col: 0,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 1,
-    col: 8,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 2,
-    col: 4,
-    tileType: ETiles.POWER
-  },
-  {
-    row: 0,
-    col: 6,
-    tileType: ETiles.TELEPORTER
-  },
-  {
-    row: 4,
-    col: 2,
-    tileType: ETiles.TELEPORTER
-  },
-  {
-    row: 3,
-    col: 2,
-    tileType: ETiles.CRYSTAL_DAMAGE
-  },
-  {
-    row: 1,
-    col: 6,
-    tileType: ETiles.CRYSTAL_DAMAGE
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 41
   }
 ];
 
@@ -227,64 +84,12 @@ const map3 = [
   */
 const map4 = [
   {
-    row: 2,
-    col: 2,
-    tileType: ETiles.CRYSTAL_BIG
+    crystalType: ECrystalType.CRYSTAL_BIG,
+    boardPosition: 20
   },
   {
-    row: 2,
-    col: 6,
-    tileType: ETiles.CRYSTAL_BIG
-  },
-  {
-    row: 0,
-    col: 0,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 0,
-    col: 8,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 4,
-    col: 0,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 4,
-    col: 8,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 1,
-    col: 2,
-    tileType: ETiles.POWER
-  },
-  {
-    row: 3,
-    col: 6,
-    tileType: ETiles.POWER
-  },
-  {
-    row: 1,
-    col: 6,
-    tileType: ETiles.PHYSICAL_RESISTANCE
-  },
-  {
-    row: 3,
-    col: 2,
-    tileType: ETiles.PHYSICAL_RESISTANCE
-  },
-  {
-    row: 0,
-    col: 4,
-    tileType: ETiles.CRYSTAL_DAMAGE
-  },
-  {
-    row: 4,
-    col: 4,
-    tileType: ETiles.CRYSTAL_DAMAGE
+    crystalType: ECrystalType.CRYSTAL_BIG,
+    boardPosition: 24
   }
 ];
 
@@ -296,84 +101,28 @@ const map4 = [
   */
 const map5 = [
   {
-    row: 0,
-    col: 1,
-    tileType: ETiles.CRYSTAL_SMALL
+    crystalType: ECrystalType.CRYSTAL_SMALL,
+    boardPosition: 1
   },
   {
-    row: 2,
-    col: 2,
-    tileType: ETiles.CRYSTAL_SMALL
+    crystalType: ECrystalType.CRYSTAL_SMALL,
+    boardPosition: 20
   },
   {
-    row: 4,
-    col: 1,
-    tileType: ETiles.CRYSTAL_SMALL
+    crystalType: ECrystalType.CRYSTAL_SMALL,
+    boardPosition: 37
   },
   {
-    row: 0,
-    col: 7,
-    tileType: ETiles.CRYSTAL_SMALL
+    crystalType: ECrystalType.CRYSTAL_SMALL,
+    boardPosition: 7
   },
   {
-    row: 2,
-    col: 6,
-    tileType: ETiles.CRYSTAL_SMALL
+    crystalType: ECrystalType.CRYSTAL_SMALL,
+    boardPosition: 24
   },
   {
-    row: 4,
-    col: 7,
-    tileType: ETiles.CRYSTAL_SMALL
-  },
-  {
-    row: 1,
-    col: 0,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 3,
-    col: 8,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 3,
-    col: 0,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 1,
-    col: 8,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 2,
-    col: 1,
-    tileType: ETiles.POWER
-  },
-  {
-    row: 2,
-    col: 7,
-    tileType: ETiles.POWER
-  },
-  {
-    row: 0,
-    col: 5,
-    tileType: ETiles.MAGICAL_RESISTANCE
-  },
-  {
-    row: 4,
-    col: 3,
-    tileType: ETiles.MAGICAL_RESISTANCE
-  },
-  {
-    row: 0,
-    col: 3,
-    tileType: ETiles.CRYSTAL_DAMAGE
-  },
-  {
-    row: 4,
-    col: 5,
-    tileType: ETiles.CRYSTAL_DAMAGE
+    crystalType: ECrystalType.CRYSTAL_SMALL,
+    boardPosition: 43
   }
 ];
 
@@ -386,69 +135,20 @@ const map5 = [
  */
 const map6 = [
   {
-    row: 2,
-    col: 1,
-    tileType: ETiles.CRYSTAL
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 19
   },
   {
-    row: 1,
-    col: 3,
-    tileType: ETiles.CRYSTAL
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 12
   },
   {
-    row: 2,
-    col: 7,
-    tileType: ETiles.CRYSTAL
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 25
   },
   {
-    row: 3,
-    col: 5,
-    tileType: ETiles.CRYSTAL
-  },
-  {
-    row: 0,
-    col: 2,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 2,
-    col: 8,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 2,
-    col: 0,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 4,
-    col: 6,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 4,
-    col: 2,
-    tileType: ETiles.CRYSTAL_DAMAGE
-  },
-  {
-    row: 0,
-    col: 6,
-    tileType: ETiles.CRYSTAL_DAMAGE
-  },
-  {
-    row: 2,
-    col: 4,
-    tileType: ETiles.POWER
-  },
-  {
-    row: 3,
-    col: 7,
-    tileType: ETiles.SPEED
-  },
-  {
-    row: 1,
-    col: 1,
-    tileType: ETiles.SPEED
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 32
   }
 ];
 
@@ -461,71 +161,25 @@ const map6 = [
  */
 const map7 = [
   {
-    row: 0,
-    col: 2,
-    tileType: ETiles.CRYSTAL
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 2
   },
   {
-    row: 3,
-    col: 0,
-    tileType: ETiles.CRYSTAL
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 27
   },
   {
-    row: 0,
-    col: 6,
-    tileType: ETiles.CRYSTAL
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 6
   },
   {
-    row: 3,
-    col: 8,
-    tileType: ETiles.CRYSTAL
-  },
-  {
-    row: 1,
-    col: 0,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 4,
-    col: 0,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 1,
-    col: 8,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 4,
-    col: 8,
-    tileType: ETiles.SPAWN
-  },
-  {
-    row: 1,
-    col: 4,
-    tileType: ETiles.POWER
-  },
-  {
-    row: 4,
-    col: 4,
-    tileType: ETiles.SPEED
-  },
-  {
-    row: 2,
-    col: 2,
-    tileType: ETiles.CRYSTAL_DAMAGE
-  },
-  {
-    row: 2,
-    col: 6,
-    tileType: ETiles.CRYSTAL_DAMAGE
+    crystalType: ECrystalType.CRYSTAL,
+    boardPosition: 35
   }
 ];
 
 // console.log([map1, map2, map3, map4, map5, map6, map7]);
 export const mapTemplates: {
-  row: number,
-  col: number,
-  tileType: ETiles,
-  crystalType?: number
+  crystalType: ECrystalType,
+  boardPosition: number
 }[][] = [map1, map2, map3, map4, map5, map6, map7];

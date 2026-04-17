@@ -149,7 +149,7 @@ export const LobbyService = {
         faction,
         gameMode,
         opponentId
-      }); // fnf
+      });
       console.log('NEW GAME CREATED');
     }
 

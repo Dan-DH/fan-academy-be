@@ -5,8 +5,8 @@ export interface IColyseusOnCreate {
   username: string,
   portrait: string,
   faction: EFaction,
-  token: string,
+  token: string, // FIXME: I don't think these are needed
   gameMode: EGameModes,
-  roomId?: string,
+  roomId?: string, // FIXME:
   opponentId?: string
 }

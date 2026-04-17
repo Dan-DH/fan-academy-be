@@ -3,10 +3,11 @@ import { CustomError } from "../classes/customError";
 import { EFaction, EGameModes, EGameStatus, EWinConditions } from "../enums/game.enums";
 import IGame, { IPlayerData } from "../interfaces/gameInterface";
 import Game from "../models/gameModel";
-import { createFactionDeck, randomIntFromInterval, updateUserStats } from "../utils/gameUtils";
+import { createFactionDeck, mapCrystalTypeToHealth, randomIntFromInterval, updateUserStats } from "../utils/gameUtils";
 import { EmailService } from "../emails/emailService";
 import User from "../models/userModel";
 import { IColyseusOnCreate } from "../interfaces/colyseusInterface";
+import { mapTemplates } from "../utils/mapTemplates";
 
 const GameService = {
   // GET ACTIONS
@@ -44,6 +45,8 @@ const GameService = {
         }
       }
     ]);
+
+    console.log('getCurrentGamesForGameList', gameList);
 
     const { openGames, finishedGames } = gameList[0];
 
@@ -156,6 +159,15 @@ const GameService = {
       };
       const activePlayer = getActivePlayer(game.players[0].userId, options.userId);
 
+      const map = randomIntFromInterval(0, 7);
+      const boardState = mapTemplates[map].map(c => {
+        return {
+          unitId: `crystal_${c.boardPosition}}`,
+          currentHealth: mapCrystalTypeToHealth(c.crystalType),
+          boardPosition: c.boardPosition
+        };
+      });
+
       const updatedGame = await Game.findOneAndUpdate(
         {
           _id: game._id,
@@ -172,11 +184,12 @@ const GameService = {
           },
           $set: {
             status: EGameStatus.PLAYING,
-            map: randomIntFromInterval(0, 7),
+            map,
             currentTurn: {
               turnStartSnapshot: {
                 p1: { deck: p1Deck },
-                p2: { deck: p2Deck }
+                p2: { deck: p2Deck },
+                boardState
               }
             },
             lastPlayedAt: new Date(),

@@ -10,7 +10,6 @@ import express, { Express, Request, Response } from "express";
 import "express-async-errors"; // Error MW patch
 import http from 'http';
 import passport from "passport";
-import { GameRoom } from "./colyseus/gameRoom";
 import { Lobby } from "./colyseus/lobbyRoom";
 import gameRouter from './controllers/gameController';
 import userRouter from './controllers/userController';
@@ -18,8 +17,8 @@ import { databaseConnection } from "./db";
 import IUser from "./interfaces/userInterface";
 import AppErrorHandler from "./middleware/errorHandler";
 import { jwtStrategy, localStrategy } from "./middleware/passport";
-import { sanitizeInput } from "./middleware/sanitizeInput";
 import { ensureNotificationDefinitionsExist } from "./models/notificationModel";
+import { sanitizeQueryInput } from "./middleware/sanitizeInput";
 
 const index = async () => {
   console.log('USING ENV:', process.env.NODE_ENV);
@@ -37,12 +36,9 @@ const index = async () => {
   // Define lobby room for real time game updates
   colyseusServer.define('lobby', Lobby);
 
-  // Define a room for the game
-  colyseusServer.define('game_room', GameRoom).filterBy(['mongoId']).enableRealtimeListing();
-
   // Middleware
   app.use(express.json());
-  app.use(sanitizeInput);
+  app.use(sanitizeQueryInput);
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(cors({
     origin: [process.env.LOCALHOST_BE!, process.env.LOCALHOST_FE!, process.env.FE_URL!],
@@ -63,6 +59,8 @@ const index = async () => {
 
       res.send({
         userId: user._id,
+        portrait: user.portrait,
+        username: user.username,
         preferences: user.preferences
       });
     }

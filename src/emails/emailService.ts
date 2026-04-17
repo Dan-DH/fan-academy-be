@@ -1,8 +1,8 @@
 import * as Brevo from '@getbrevo/brevo';
 import { EWinConditions } from '../enums/game.enums';
-import { IPopulatedPlayerData } from '../interfaces/gameInterface';
 import { CustomError } from '../classes/customError';
 import { mapFactionsForEMail, mapWinConditionsForEMail } from './emaliServiceUtils';
+import { IPlayerData } from '../interfaces/gameInterface';
 
 const apiInstance = new Brevo.TransactionalEmailsApi();
 
@@ -89,8 +89,8 @@ export const EmailService = {
   },
 
   async sendGameOverEmail(data: {
-    winner: IPopulatedPlayerData,
-    loser: IPopulatedPlayerData,
+    winner: IPlayerData,
+    loser: IPlayerData,
     emails: string[]
   }, winCondition: EWinConditions): Promise<void> {
     const { winner, loser, emails } = data;
@@ -99,9 +99,9 @@ export const EmailService = {
       templateId: 4,
       email: emails,
       params: {
-        user1: winner.userData.username,
+        user1: winner.username,
         user1Faction: mapFactionsForEMail(winner.faction!),
-        user2: loser.userData.username,
+        user2: loser.username,
         user2Faction: mapFactionsForEMail(loser.faction!),
         winCondition: mapWinConditionsForEMail(winCondition)
       }

@@ -108,11 +108,17 @@ export enum ETiles {
   MAGICAL_RESISTANCE = 'helmetTile',
   CRYSTAL_DAMAGE = 'crystalDamageTile',
   TELEPORTER = 'teleporterTile',
-  CRYSTAL = 'crystal',
-  CRYSTAL_BIG = 'crystalBig',
-  CRYSTAL_SMALL = 'crystalSmall',
   SPAWN = 'spawnTile',
   SPEED = 'speedTile'
+  //   CRYSTAL = 'crystal',
+  // CRYSTAL_BIG = 'crystalBig',
+  // CRYSTAL_SMALL = 'crystalSmall'
+}
+
+export enum ECrystalType {
+  CRYSTAL = 'crystal',
+  CRYSTAL_BIG = 'crystalBig',
+  CRYSTAL_SMALL = 'crystalSmall'
 }
 
 export enum EGameModes {

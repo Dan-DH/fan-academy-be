@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { EActionClass, EActionType, EClass, EFaction, EGameModes, EGameStatus, EWinConditions } from "../enums/game.enums";
+import { EActionClass, EActionType, EClass, ECrystalType, EFaction, EGameModes, EGameStatus, EWinConditions } from "../enums/game.enums";
 
 export interface IGameOver {
   winCondition: EWinConditions;
@@ -65,6 +65,7 @@ export interface ICrystal {
   boardPosition: number;
   stats?: number; // bitmask -diff from hero bitmask
   engineerShield?: string;
+  type: ECrystalType;
 }
 
 export interface IGameTurn {
@@ -76,7 +77,7 @@ export interface IGameTurn {
 export interface IGameState {
   p1?: IPlayerResources;
   p2?: IPlayerResources;
-  boardState?: IHero[];
+  boardState?: (IHero | ICrystal)[];
 }
 
 interface IChatMessage {
