@@ -43,6 +43,8 @@ router.post("/login", (req: Request, res: Response, next: NextFunction) => {
         token,
         userData: {
           userId: typedUser._id,
+          username: typedUser.username,
+          portrait: typedUser.portrait,
           preferences: typedUser.preferences
         }
       });

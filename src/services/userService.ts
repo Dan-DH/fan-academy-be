@@ -62,6 +62,8 @@ const UserService = {
         token,
         userData: {
           userId: user._id,
+          username: user.username,
+          portrait: user.portrait,
           preferences: user.preferences
         }
       });
