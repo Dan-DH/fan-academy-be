@@ -1,4 +1,4 @@
-import mongoose, { Types } from 'mongoose';
+import mongoose from 'mongoose';
 import IGame from '../interfaces/gameInterface';
 import { EActionClass, EActionType, EGameModes, EWinConditions } from '../enums/game.enums';
 
@@ -151,7 +151,7 @@ const TurnActionSchema = new Schema({
  * GamePlayerDataSchema
  */
 const GamePlayerDataSchema = new Schema({
-  userId: Types.ObjectId,
+  userId: String,
   username: String,
   portrait: String,
   faction: String
@@ -207,10 +207,6 @@ const ChatMessageSchema = new Schema({
  * GameSchema
  */
 const GameSchema = new Schema({
-  _id: {
-    type: Types.ObjectId,
-    required: true
-  },
   players: {
     type: [GamePlayerDataSchema],
     required: true

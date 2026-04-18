@@ -83,6 +83,7 @@ const GameService = {
   }): Promise<IGame> {
     const { userId, username, portrait, faction, gameMode, opponentId } = params;
 
+    // Check if either player is above the max game limit
     const activeGamesLimit = 50;
 
     const [limits] = await Game.aggregate([
@@ -113,6 +114,7 @@ const GameService = {
       throw new CustomError(22);
     }
 
+    // Create a new game
     const atDate = new Date();
 
     let result;
