@@ -233,12 +233,16 @@ const GameService = {
     return result;
   },
 
-  async deleteGame(userId: string, gameId: string): Promise<void> {
-    Game.deleteOne({
-      _id: gameId,
-      'players.userId': userId,
-      status: { $in: [EGameStatus.SEARCHING, EGameStatus.CHALLENGE] }
-    });
+  deleteGame(userId: string, gameId: string): void {
+    try{
+      Game.deleteOne({
+        _id: gameId,
+        'players.userId': userId,
+        status: { $in: [EGameStatus.SEARCHING, EGameStatus.CHALLENGE] }
+      }).exec();
+    } catch (error) {
+      throw new CustomError(24);
+    }
   },
 
   async handleTimedOutGames(games: IGame[]): Promise<void> {
