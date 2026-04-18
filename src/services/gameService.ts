@@ -79,9 +79,11 @@ const GameService = {
     portrait: string,
     faction: EFaction,
     gameMode: EGameModes,
+    opponentUsername?: string,
+    opponentPortrait?: string,
     opponentId?: string,
   }): Promise<IGame> {
-    const { userId, username, portrait, faction, gameMode, opponentId } = params;
+    const { userId, username, portrait, faction, gameMode, opponentUsername, opponentPortrait, opponentId } = params;
 
     // Check if either player is above the max game limit
     const activeGamesLimit = 50;
@@ -127,7 +129,11 @@ const GameService = {
             portrait,
             faction
           },
-          ...opponentId ? [{ userId: opponentId }] : []
+          ...opponentId ? [{
+            userId: opponentId,
+            username: opponentUsername,
+            portrait: opponentPortrait
+          }] : []
         ],
         gameMode,
         status: opponentId ? EGameStatus.CHALLENGE : EGameStatus.SEARCHING,

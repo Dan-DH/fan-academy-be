@@ -8,13 +8,13 @@ const router = Router();
 
 // TODO: I guess we don't use any of this...
 // Get user's ongoing games
-router.get('/playing', isAuthenticated, async (req: Request, res: Response, _next: NextFunction): Promise<Response> => {
-  const userId = req.query.userId?.toString();
+// router.get('/playing', isAuthenticated, async (req: Request, res: Response, _next: NextFunction): Promise<Response> => {
+//   const userId = req.query.userId?.toString();
 
-  const response = await GameService.getCurrentGamesForGameList(userId!);
+//   const response = await GameService.getCurrentGamesForGameList(userId!);
 
-  return res.send(response);
-});
+//   return res.send(response);
+// });
 
 // Get the oldest game looking for a player, if any
 router.get('/matchmaking', isAuthenticated, async (req: Request, res: Response, _next: NextFunction): Promise<Response> => {
@@ -41,21 +41,29 @@ router.get('/get', isAuthenticated, async (req: Request, res: Response): Promise
  * POST
  *
  */
+//TODO: rename if only used for challenged (we check for opponentId)
 router.post('/newgame', isAuthenticated, async(req: Request, res: Response, _next: NextFunction): Promise<Response> => {
   const userId = req.query.userId?.toString();
+  const username = req.query.username?.toString();
+  const portrait = req.query.portrait?.toString();
   const faction = req.query.faction?.toString() as EFaction;
-  // const gameMode = req.query.gameMode?.toString() as EGameModes;
+  const gameMode = req.query.gameMode?.toString() as EGameModes;
+  const opponentUsername = req.query.opponentUsername?.toString();
+  const opponentPortrait = req.query.opponentPortrait?.toString();
   const opponentId = req.query.opponentId?.toString();
 
-  if (!userId || !faction || !opponentId) throw new CustomError(23);
-  // const response = await GameService.createGame({
-  //   userId,
-  //   faction,
-  //   gameMode,
-  //   opponentId
-  // });
-  // return res.send(response);
-  return res.send() // FIXME:
+  if (!userId || !username || !portrait || !faction || !opponentUsername || !opponentPortrait || !opponentId) throw new CustomError(23);
+  const response = await GameService.createGame({
+    userId,
+    username,
+    portrait,
+    faction,
+    gameMode,
+    opponentUsername,
+    opponentPortrait,
+    opponentId
+  });
+  return res.send(response);
 });
 
 export default router;
