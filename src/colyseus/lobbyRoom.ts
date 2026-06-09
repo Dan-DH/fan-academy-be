@@ -112,14 +112,7 @@ export class Lobby extends Room {
 
       if (game.status === EGameStatus.PLAYING) {
         client.send(EColyseusMessages.NEW_GAME_STARTED, game);
-        const opponentId = game.players[0].userId;
-        const isOpponentOnline = this.clients.find(c => (c as any).userId === opponentId);
-        const opponentIsFirstPlayer = game.activePlayer === game.players[0].userId;
-        if (isOpponentOnline) {
-          isOpponentOnline.send(EColyseusMessages.NEW_GAME_STARTED, game);
-        } else if (opponentIsFirstPlayer) {
-          LobbyService.offlineTurnNotification(opponentId);
-        }
+        LobbyService.informOpponentOfNewGameStarted(this, game, client);
         return;
       }
 
@@ -132,6 +125,18 @@ export class Lobby extends Room {
           LobbyService.offlineChallengeNotification(challengedPlayer, message.username);
         }
       }
+    });
+
+    /**
+     * CHALLENGE_ACCEPTED
+     */
+    this.onMessage(EColyseusMessages.CHALLENGE_ACCEPTED, async (client: Client, message: IColyseusOnCreate): Promise<void> => {
+      const game = await LobbyService.handleChallengeAccepted(message);
+      if (!game) throw new CustomError(24);
+
+      client.send(EColyseusMessages.NEW_GAME_STARTED, game);
+      LobbyService.informOpponentOfNewGameStarted(this, game, client);
+      return;
     });
 
     /**

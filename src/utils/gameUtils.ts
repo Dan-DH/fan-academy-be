@@ -1,47 +1,83 @@
 import { SortOrder } from "mongoose";
-import { ECrystalType, EFaction, EHeroes, EItems, EWinConditions } from "../enums/game.enums";
+import { EClass, ECrystalType, EFaction, EHeroes, EItems, EWinConditions } from "../enums/game.enums";
 import { ELeaderboardEnum } from "../enums/leaderboard.enums";
 import IUser from "../interfaces/userInterface";
 import { updateELORatings } from "../game/elo";
 import User from "../models/userModel";
 
-export function createFactionDeck(userId: string, faction: EFaction): {
-  userId: string,
-  deck: { unitId: string }[],
-} {
+export function createFactionDeck(userId: string, faction: EFaction):
+// userId: string,
+{
+  unitId: string,
+  class: EClass
+}[]
+{
   const unitsDeck = [];
   const itemsDeck = [];
 
   const unitReferences = createDeckMapping(faction);
 
   for (let index = 0; index < 3; index++) {
-    const tank = { unitId: `${userId}_${unitReferences.dps}_${index}` };
-    const dps = { unitId: `${userId}_${unitReferences.tank}_${index}` };
-    const mage = { unitId: `${userId}_${unitReferences.mage}_${index}` };
-    const support = { unitId: `${userId}_${unitReferences.support}_${index}` };
-    const magicItem = { unitId: `${userId}_${unitReferences.magicItem}_${index}` };
-    const runeMetal = { unitId: `${userId}_${unitReferences.runeMetal}_${index}` };
-    const factionEquipment = { unitId: `${userId}_${unitReferences.factionEquipment}_${index}` };
+    const tank = {
+      unitId: `${userId}_${unitReferences.dps}_${index}`,
+      class: EClass.HERO
+    };
+    const dps = {
+      unitId: `${userId}_${unitReferences.tank}_${index}`,
+      class: EClass.HERO
+    };
+    const mage = {
+      unitId: `${userId}_${unitReferences.mage}_${index}`,
+      class: EClass.HERO
+    };
+    const support = {
+      unitId: `${userId}_${unitReferences.support}_${index}`,
+      class: EClass.HERO
+    };
+    const magicItem = {
+      unitId: `${userId}_${unitReferences.magicItem}_${index}`,
+      class: EClass.ITEM
+    };
+    const runeMetal = {
+      unitId: `${userId}_${unitReferences.runeMetal}_${index}`,
+      class: EClass.ITEM
+    };
+    const factionEquipment = {
+      unitId: `${userId}_${unitReferences.factionEquipment}_${index}`,
+      class: EClass.ITEM
+    };
 
     unitsDeck.push(dps, tank, mage, support);
     itemsDeck.push(magicItem, runeMetal, factionEquipment);
   }
 
   for (let index = 0; index < 2; index++) {
-    const potion = { unitId: `${userId}_${unitReferences.potion}_${index}` };
-    const spell = { unitId: `${userId}_${unitReferences.spell}_${index}` };
-    const superCharge = { unitId: `${userId}_${unitReferences.superCharge}_${index}` };
+    const potion = {
+      unitId: `${userId}_${unitReferences.potion}_${index}`,
+      class: EClass.ITEM
+    };
+    const spell = {
+      unitId: `${userId}_${unitReferences.spell}_${index}`,
+      class: EClass.ITEM
+    };
+    const superCharge = {
+      unitId: `${userId}_${unitReferences.superCharge}_${index}`,
+      class: EClass.ITEM
+    };
 
     itemsDeck.push(potion, spell, superCharge);
   }
 
-  unitsDeck.push({ unitId: `${userId}_${unitReferences.dps}` });
+  unitsDeck.push({
+    unitId: `${userId}_${unitReferences.super}`,
+    class: EClass.HERO
+  });
 
   const deck = shuffleDeck(unitsDeck, itemsDeck);
 
   return {
-    userId,
-    deck
+    // userId,
+    ...deck
   };
 }
 
@@ -96,7 +132,13 @@ const createDeckMapping = (faction: EFaction) => {
 };
 
 // Fisher-Yates shuffle algorithm
-export function shuffleArray(array: { unitId: string }[]): { unitId: string }[] {
+export function shuffleArray(array: {
+  unitId: string,
+  class: EClass
+}[]): {
+    unitId: string,
+    class: EClass
+  }[] {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1)); // Random index from 0 to i
     [array[i], array[j]] = [array[j], array[i]]; // Swap elements
@@ -104,10 +146,19 @@ export function shuffleArray(array: { unitId: string }[]): { unitId: string }[] 
   return array;
 }
 
-export function shuffleDeck(unitsDeck: { unitId: string }[], itemsDeck: { unitId: string }[]) {
+export function shuffleDeck(unitsDeck: {
+  unitId: string,
+  class: EClass
+}[], itemsDeck: {
+  unitId: string,
+  class: EClass
+}[]) {
   const shuffledUnits = shuffleArray(unitsDeck);
 
-  const startingUnits: { unitId: string }[] = shuffledUnits.splice(0, 3);
+  const startingUnits: {
+    unitId: string,
+    class: EClass
+  }[] = shuffledUnits.splice(0, 3);
   const shuffledDeck = shuffleArray([...shuffledUnits, ...itemsDeck]);
 
   return [...startingUnits, ...shuffledDeck];

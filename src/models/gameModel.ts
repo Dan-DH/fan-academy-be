@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import IGame from '../interfaces/gameInterface';
-import { EActionClass, EActionType, EGameModes, EWinConditions } from '../enums/game.enums';
+import { EActionClass, EActionType, EClass, EGameModes, EWinConditions } from '../enums/game.enums';
 
 const { Schema, model } = mongoose;
 
@@ -27,6 +27,11 @@ const CrystalSchema = new Schema({
     type: String,
     required: true
   },
+  class: {
+    type: String,
+    enum: EClass,
+    required: true
+  },
   currentHealth: {
     type: Number,
     required: true
@@ -47,6 +52,11 @@ const ItemSchema = new Schema({
     type: String,
     required: true
   },
+  class: {
+    type: String,
+    enum: EClass,
+    required: true
+  },
   boardPosition: {
     type: Number,
     required: true
@@ -61,14 +71,13 @@ const HeroSchema = new Schema({
     type: String,
     required: true
   },
-  boardPosition: {
-    type: Number,
+  class: {
+    type: String,
+    enum: EClass,
     required: true
   },
-  currentHealth: {
-    type: Number,
-    required: true
-  },
+  boardPosition: Number,
+  currentHealth: Number,
   lastBreath: Boolean,
   stats: {
     type: Number,
@@ -169,11 +178,11 @@ const GamePlayerResourcesSchema = new Schema({
  * GameStateSchema
  */
 const GameStateSchema = new Schema({
-  player1: {
+  p1: {
     type: GamePlayerResourcesSchema,
     required: false
   },
-  player2: {
+  p2: {
     type: GamePlayerResourcesSchema,
     required: false
   },
@@ -184,8 +193,8 @@ const GameStateSchema = new Schema({
  * GameCurrentTurnSchema
  */
 const GameCurrentTurnSchema = new Schema({
-  turnStart: GameStateSchema,
-  turnEnd: GameStateSchema,
+  turnStartSnapshot: GameStateSchema,
+  turnEndSnapshot: GameStateSchema,
   actions: [TurnActionSchema]
 }, { _id: false });
 

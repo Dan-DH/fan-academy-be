@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import { CustomError } from "../classes/customError";
-import { EFaction, EGameModes, EGameStatus, EWinConditions } from "../enums/game.enums";
+import { EClass, EFaction, EGameModes, EGameStatus, EWinConditions } from "../enums/game.enums";
 import IGame, { IPlayerData } from "../interfaces/gameInterface";
 import Game from "../models/gameModel";
 import { createFactionDeck, mapCrystalTypeToHealth, randomIntFromInterval, updateUserStats } from "../utils/gameUtils";
@@ -68,6 +68,15 @@ const GameService = {
       _id: gameId,
       'players.userId': userId
     }, { currentTurn: 1 }).lean();
+    if (!game) throw new CustomError(24);
+    return game;
+  },
+
+  async getFullGame(userId: string, gameId: string): Promise<IGame> {
+    const game = await Game.findOne({
+      _id: gameId,
+      'players.userId': userId
+    }).lean();
     if (!game) throw new CustomError(24);
     return game;
   },
@@ -161,35 +170,44 @@ const GameService = {
       const p1Deck = createFactionDeck(game.players[0].userId, game.players[0].faction!);
       const p2Deck = createFactionDeck(options.userId, options.faction);
 
+      console.log('p1Deck', p1Deck);
+      console.log('p2Deck', p2Deck);
+      console.log('test', p1Deck[0]);
+
       // TODO: move this somewhere else
       const getActivePlayer = (p1: string, p2: string) => {
         return Math.random() < 0.5 ? p1 : p2;
       };
       const activePlayer = getActivePlayer(game.players[0].userId, options.userId);
 
-      const map = randomIntFromInterval(0, 7);
+      const map = randomIntFromInterval(0, 6);
       const boardState = mapTemplates[map].map(c => {
         return {
           unitId: `crystal_${c.boardPosition}}`,
           currentHealth: mapCrystalTypeToHealth(c.crystalType),
-          boardPosition: c.boardPosition
+          boardPosition: c.boardPosition,
+          class: EClass.CRYSTAL
         };
       });
+
+      const pushStep = game.status === EGameStatus.SEARCHING ? {
+        $push: {
+          players: {
+            userId: options.userId,
+            username: playerTwo.username,
+            portrait: playerTwo.portrait,
+            faction: options.faction
+          }
+        }
+      } : {};
 
       const updatedGame = await Game.findOneAndUpdate(
         {
           _id: game._id,
-          status: EGameStatus.SEARCHING
+          status: { $in: [EGameStatus.SEARCHING, EGameStatus.CHALLENGE] }
         },
         {
-          $push: {
-            players: {
-              userId: options.userId,
-              username: playerTwo.username,
-              portrait: playerTwo.portrait,
-              faction: options.faction
-            }
-          },
+          ...pushStep,
           $set: {
             status: EGameStatus.PLAYING,
             map,
@@ -201,7 +219,8 @@ const GameService = {
               }
             },
             lastPlayedAt: new Date(),
-            activePlayer
+            activePlayer,
+            ...game.status === EGameStatus.CHALLENGE ? { 'players.1.faction': options.faction } : {}
           }
         },
         {
@@ -216,6 +235,8 @@ const GameService = {
           }
         }
       );
+
+      console.log('it returns', updatedGame);
 
       return updatedGame;
     } catch (err) {

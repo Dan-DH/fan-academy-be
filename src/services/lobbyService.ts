@@ -9,6 +9,8 @@ import Game from "../models/gameModel";
 import { IColyseusOnCreate } from "../interfaces/colyseusInterface";
 import IUser from "../interfaces/userInterface";
 import GameService from "./gameService";
+import { Client, Room } from "@colyseus/core";
+import { EColyseusMessages } from "../enums/colyseusMessage.enums";
 
 export const LobbyService = {
   /**
@@ -140,7 +142,7 @@ export const LobbyService = {
       console.log('MATCHMAKING FOUND AN OPEN GAME');
       game = await GameService.addPlayerTwo(gameLookingForPlayers, options);
       if (!game) throw new CustomError(24);
-      console.log('NEW GAME STARTED');
+      console.log('NEW GAME STARTED', game);
     } else {
       game = await GameService.createGame({
         userId: options.userId,
@@ -150,10 +152,34 @@ export const LobbyService = {
         gameMode,
         opponentId
       });
-      console.log('NEW GAME CREATED');
+      console.log('NEW GAME CREATED', game);
     }
 
     return game;
+  },
+
+  async handleChallengeAccepted(options: IColyseusOnCreate): Promise<IGame | null> {
+    const game = await GameService.getFullGame(options.userId, options.gameId);
+    if (!game) { throw new CustomError(24); };
+
+    console.log('handleChallengeAccepted', game);
+
+    const updatedGame = await GameService.addPlayerTwo(game, options);
+    if (!updatedGame) { throw new CustomError(24); };
+
+    return updatedGame;
+  },
+
+  informOpponentOfNewGameStarted(lobby: Room, game: IGame, client: Client): void {
+    client.send(EColyseusMessages.NEW_GAME_STARTED, game);
+    const opponentId = game.players[0].userId;
+    const isOpponentOnline = lobby.clients.find(c => (c as any).userId === opponentId);
+    const opponentIsFirstPlayer = game.activePlayer === game.players[0].userId;
+    if (isOpponentOnline) {
+      isOpponentOnline.send(EColyseusMessages.NEW_GAME_STARTED, game);
+    } else if (opponentIsFirstPlayer) {
+      LobbyService.offlineTurnNotification(opponentId);
+    }
   },
 
   async offlineTurnNotification(userId: string): Promise<void> {

@@ -41,7 +41,7 @@ router.get('/get', isAuthenticated, async (req: Request, res: Response): Promise
  * POST
  *
  */
-//TODO: rename if only used for challenged (we check for opponentId)
+//TODO: rename if only used for challenges (we check for opponentId)
 router.post('/newgame', isAuthenticated, async(req: Request, res: Response, _next: NextFunction): Promise<Response> => {
   const userId = req.query.userId?.toString();
   const username = req.query.username?.toString();
