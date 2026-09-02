@@ -73,10 +73,113 @@ const GameService = {
     userId: string,
     faction: EFaction,
     gameMode: EGameModes,
+  }): Promise<HydratedDocument<IGame>> {
+    const { userId, faction, gameMode } = params;
+
+    await this.checkGameLimitReached(userId);
+
+    const userObjId = new Types.ObjectId(userId);
+    const gameId = new Types.ObjectId();
+
+    const chatLog = new ChatLog({ _id: gameId });
+    await chatLog.save();
+
+    const newGame = new Game({
+      _id: gameId,
+      players: [
+        {
+          faction,
+          userData: userObjId
+        }
+      ],
+      turnNumber: 1,
+      status: EGameStatus.SEARCHING,
+      createdAt: new Date(),
+      lastPlayedAt: new Date(),
+      chatLogs: gameId,
+      gameMode
+    });
+
+    const result = await newGame.save();
+    await result.populate('players.userData', 'username picture email preferences');
+    if (!result) throw new CustomError(23);
+
+    return result;
+  },
+
+  async createChallenge(params: {
+    userId: string,
+    faction: EFaction,
+    gameMode: EGameModes,
     opponentId?: string,
   }): Promise<HydratedDocument<IGame>> {
     const { userId, faction, gameMode, opponentId } = params;
 
+    await this.checkGameLimitReached(userId, opponentId);
+
+    const userObjId = new Types.ObjectId(userId);
+    const gameId = new Types.ObjectId();
+
+    const chatLog = new ChatLog({ _id: gameId });
+    await chatLog.save();
+
+    const newGame = new Game({
+      _id: gameId,
+      players: [
+        {
+          faction,
+          userData: userObjId
+        },
+        { userData: new Types.ObjectId(opponentId) }
+      ],
+      turnNumber: 1,
+      status: EGameStatus.CHALLENGE,
+      createdAt: new Date(),
+      lastPlayedAt: new Date(),
+      chatLogs: gameId,
+      gameMode
+    });
+
+    const result = await newGame.save();
+    await result.populate('players.userData', 'username picture email preferences');
+    if (!result) throw new CustomError(23);
+
+    matchMaker.presence.publish('newGamePresence', {
+      game: result,
+      userIds: [userId, opponentId]
+    });
+
+    const challengedUser = result.players[1].userData as unknown as IPopulatedUserData;
+    const challenger = result.players[0].userData as unknown as IPopulatedUserData;
+
+    await this.sendPlayerNotification(challengedUser, challenger);
+
+    return result;
+  },
+
+  async sendPlayerNotification(player: IPopulatedUserData, opponent: IPopulatedUserData): Promise<void> {
+    const isOnline = await matchMaker.presence.get(`user:${opponent._id}`);
+
+    const acceptsEmails = player.preferences?.emailNotifications;
+
+    if (!isOnline && acceptsEmails) await EmailService.sendChallengeNotificationEmail(player.email!, player.username!, opponent.username!);
+    // Send Discord notification for new challenge
+
+    // TODO: add check for having Discord notis on
+    if (!isOnline && !acceptsEmails) {
+      try {
+        if (typeof player.username === 'string') {
+          await DiscordNotificationService.sendNewChallenge(player.username);
+        } else {
+          console.error('Challenged user username is missing or not a string, Discord notification not sent.');
+        }
+      } catch (err) {
+        console.error('Failed to send Discord notification:', err);
+      }
+    }
+  },
+
+  async checkGameLimitReached(userId: string, opponentId?: string): Promise<void> {
     const activeGamesLimit = 50;
     const playerActiveGames = await Game.find({
       'players.userData': userId,
@@ -91,62 +194,6 @@ const GameService = {
       });
       if (opponentActiveGames.length && opponentActiveGames.length >= activeGamesLimit) throw new CustomError(22);
     }
-
-    const userObjId = new Types.ObjectId(userId);
-    const gameId = new Types.ObjectId();
-
-    // Create a chat log for the game
-    const chatLog = new ChatLog({ _id: gameId });
-    await chatLog.save();
-
-    const newGame = new Game({
-      _id: gameId,
-      players: [
-        {
-          faction,
-          userData: userObjId
-        },
-        ...opponentId ? [{ userData: new Types.ObjectId(opponentId) }] : []
-      ],
-      turnNumber: 1,
-      status: opponentId ? EGameStatus.CHALLENGE : EGameStatus.SEARCHING,
-      createdAt: new Date(),
-      lastPlayedAt: new Date(),
-      chatLogs: gameId,
-      gameMode
-    });
-
-    const result = await newGame.save();
-    await result.populate('players.userData', 'username picture email preferences');
-    if (!result) throw new CustomError(23);
-
-    if (result.status === EGameStatus.CHALLENGE) {
-      matchMaker.presence.publish('newGamePresence', {
-        game: result,
-        userIds: [userId, opponentId]
-      });
-
-      // Send email to challenged user if they are not online but have notifications enabled
-      const challengedUser = result.players[1].userData as unknown as IPopulatedUserData;
-      const challenger = result.players[0].userData as unknown as IPopulatedUserData;
-
-      const isOnline = await matchMaker.presence.get(`user:${opponentId}`);
-
-      const acceptsEmails = challengedUser.preferences?.emailNotifications;
-
-      if (!isOnline && acceptsEmails) await EmailService.sendChallengeNotificationEmail(challengedUser.email!, challengedUser.username!, challenger.username!);
-      // Send Discord notification for new challenge
-      try {
-        if (typeof challengedUser.username === 'string') {
-          await DiscordNotificationService.sendNewChallenge(challengedUser.username);
-        } else {
-          console.error('Challenged user username is missing or not a string, Discord notification not sent.');
-        }
-      } catch (err) {
-        console.error('Failed to send Discord notification:', err);
-      }
-    }
-    return result;
   },
 
   async addPlayerTwo(gameLookingForPlayers: HydratedDocument<IGame>, faction: EFaction, userId: string): Promise<HydratedDocument<IGame> | null> {

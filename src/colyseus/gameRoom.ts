@@ -23,14 +23,13 @@ export class GameRoom extends Room {
     token: string,
     gameMode: EGameModes,
     roomId?: string,
-    opponentId?: string
   }): Promise<void> {
     /**
      * onCreate can be called when:
      * -looking for a game.
      *    -checks for already opened rooms
      *      -if no room is found:
-     *        -creates the room for the first time (no second player, room is disposed of immediatly), also no roomId (uuid) provided by the FE
+     *        -creates the room for the first time (no second player, room is disposed of immediately), also no roomId (uuid) provided by the FE
      *        -creates the room, adds player1 data, sets the room status to 'searching'
      *
      *      -if a room is found, adds player2 data, sets room status to 'playing'
@@ -40,7 +39,7 @@ export class GameRoom extends Room {
      * -re-creating a room: the options parameter provides the roomId
      *    -checks if the user is one of the two players, then grants access and sends the state
      */
-    const { faction, roomId, gameMode, opponentId } = options;
+    const { faction, roomId, gameMode } = options;
 
     console.log('ON CREATE ROOM - ID AND FACTION NAME', roomId, faction);
     /**
@@ -111,8 +110,7 @@ export class GameRoom extends Room {
         const newGame = await GameService.createGame({
           userId: options.userId,
           faction,
-          gameMode,
-          opponentId
+          gameMode
         });
         console.log('NEWGAME', newGame);
 

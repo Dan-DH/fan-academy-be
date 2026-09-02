@@ -40,14 +40,14 @@ router.get('/get', isAuthenticated, async (req: Request, res: Response): Promise
  * POST
  *
  */
-router.post('/newgame', isAuthenticated, async(req: Request, res: Response, _next: NextFunction): Promise<Response> => {
+router.post('/newGameChallenge', isAuthenticated, async(req: Request, res: Response, _next: NextFunction): Promise<Response> => {
   const userId = req.query.userId?.toString();
   const faction = req.query.faction?.toString() as EFaction;
   const gameMode = req.query.gameMode?.toString() as EGameModes;
   const opponentId = req.query.opponentId?.toString();
 
   if (!userId || !faction || !opponentId) throw new CustomError(23);
-  const response = await GameService.createGame({
+  const response = await GameService.createChallenge({
     userId,
     faction,
     gameMode,
