@@ -74,40 +74,31 @@ const GameService = {
     faction: EFaction,
     gameMode: EGameModes,
   }): Promise<HydratedDocument<IGame>> {
-    const { userId, faction, gameMode } = params;
+    return await this.createNewGameOrChallenge(params);
+  },
 
-    await this.checkGameLimitReached(userId);
+  async createChallenge(params: {
+    userId: string,
+    faction: EFaction,
+    gameMode: EGameModes,
+    opponentId?: string,
+  }): Promise<HydratedDocument<IGame>> {
+    const result = await this.createNewGameOrChallenge(params);
 
-    const userObjId = new Types.ObjectId(userId);
-    const gameId = new Types.ObjectId();
-
-    const chatLog = new ChatLog({ _id: gameId });
-    await chatLog.save();
-
-    const newGame = new Game({
-      _id: gameId,
-      players: [
-        {
-          faction,
-          userData: userObjId
-        }
-      ],
-      turnNumber: 1,
-      status: EGameStatus.SEARCHING,
-      createdAt: new Date(),
-      lastPlayedAt: new Date(),
-      chatLogs: gameId,
-      gameMode
+    matchMaker.presence.publish('newGamePresence', {
+      game: result,
+      userIds: [params.userId, params.opponentId]
     });
 
-    const result = await newGame.save();
-    await result.populate('players.userData', 'username picture email preferences');
-    if (!result) throw new CustomError(23);
+    const challengedUser = result.players[1].userData as unknown as IPopulatedUserData;
+    const challenger = result.players[0].userData as unknown as IPopulatedUserData;
+
+    await this.sendPlayerNotification(challengedUser, challenger);
 
     return result;
   },
 
-  async createChallenge(params: {
+  async createNewGameOrChallenge(params: {
     userId: string,
     faction: EFaction,
     gameMode: EGameModes,
@@ -130,10 +121,10 @@ const GameService = {
           faction,
           userData: userObjId
         },
-        { userData: new Types.ObjectId(opponentId) }
+        ...opponentId ? [{ userData: new Types.ObjectId(opponentId) }] : []
       ],
       turnNumber: 1,
-      status: EGameStatus.CHALLENGE,
+      status: opponentId ? EGameStatus.CHALLENGE : EGameStatus.SEARCHING,
       createdAt: new Date(),
       lastPlayedAt: new Date(),
       chatLogs: gameId,
@@ -143,16 +134,6 @@ const GameService = {
     const result = await newGame.save();
     await result.populate('players.userData', 'username picture email preferences');
     if (!result) throw new CustomError(23);
-
-    matchMaker.presence.publish('newGamePresence', {
-      game: result,
-      userIds: [userId, opponentId]
-    });
-
-    const challengedUser = result.players[1].userData as unknown as IPopulatedUserData;
-    const challenger = result.players[0].userData as unknown as IPopulatedUserData;
-
-    await this.sendPlayerNotification(challengedUser, challenger);
 
     return result;
   },
