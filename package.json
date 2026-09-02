@@ -41,7 +41,7 @@
   "devDependencies": {
     "@eslint/js": "9.6.0",
     "@faker-js/faker": "^9.8.0",
-    "@getbrevo/brevo": "^2.5.0",
+    "@getbrevo/brevo": "^6.0.3",
     "@stylistic/eslint-plugin-ts": "2.3.0",
     "@types/bcrypt": "5.0.2",
     "@types/connect-mongo": "3.1.3",

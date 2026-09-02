@@ -4,27 +4,22 @@ import { IPopulatedPlayerData } from '../interfaces/gameInterface';
 import { CustomError } from '../classes/customError';
 import { mapFactionsForEMail, mapWinConditionsForEMail } from './emaliServiceUtils';
 
-const apiInstance = new Brevo.TransactionalEmailsApi();
-
-apiInstance.setApiKey(
-  Brevo.TransactionalEmailsApiApiKeys.apiKey,
-  process.env.BREVO_API_KEY!
-);
+const emailClient = new Brevo.BrevoClient({ apiKey: process.env.BREVO_API_KEY! });
 
 const emailVars = {
-  to: [{ email: process.env.EMAIL_ADDRESS }],
+  to: [{ email: process.env.EMAIL_ADDRESS! }],
   sender: {
-    email: process.env.EMAIL_SENDER,
+    email: process.env.EMAIL_SENDER!,
     name: 'Fan Academy'
   },
-  replyTo: { email: process.env.EMAIL_ADDRESS }
+  replyTo: { email: process.env.EMAIL_ADDRESS! }
 };
 
 export const EmailService = {
   async sendEmail(emailData: {
     templateId: number,
     email: string | string[],
-    params?: object,
+    params?: Record<string, unknown>,
   }): Promise<void> {
     const sendTo = Array.isArray(emailData.email)
       ? emailData.email.map((mail) => ({ email: mail }))
@@ -32,18 +27,20 @@ export const EmailService = {
 
     const emailParams = emailData.params ?? { placeHolder: '' };
 
+    console.log('email data', {
+      ...emailVars,
+      bcc: sendTo,
+      templateId: emailData.templateId,
+      params: emailParams
+    });
+
     try {
-      const smtpEmail = new Brevo.SendSmtpEmail();
-      const sendSmtpEmail = Object.assign(smtpEmail, {
+      const result = await emailClient.transactionalEmails.sendTransacEmail({
         ...emailVars,
         bcc: sendTo,
         templateId: emailData.templateId,
         params: emailParams
       });
-
-      console.log('sendSmtpEmail', sendSmtpEmail);
-
-      const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
       console.log('API called successfully. Returned data: ' + JSON.stringify(result));
     } catch(err) {
       console.log(err);
