@@ -1,10 +1,14 @@
-import { Client, Room } from "@colyseus/core";
+import { AuthContext, Client, Room } from "@colyseus/core";
 import { ObjectId } from "mongoose";
 import { CustomError } from "../classes/customError";
 import { EFaction } from "../enums/game.enums";
 import IGame, { IGameOver, IGameState } from "../interfaces/gameInterface";
 import GameService from "../services/gameService";
 import User from "../models/userModel";
+import { sanitize } from "../middleware/sanitizeInput";
+import ChatLog from "../models/chatlogModel";
+import { JWT } from "@colyseus/auth";
+import { JwtPayload } from "jsonwebtoken";
 
 export class Lobby extends Room {
   connectedClients: Set<Client> = new Set();
@@ -145,10 +149,43 @@ export class Lobby extends Room {
       this.broadcast('userDeletedUpdate', message, { except: clientsToExclude });
     });
 
-    // Keep connection alive
-    this.onMessage("ping", (client: Client) => {
-      console.log(`Received lobby ping from user ${(client as any).userId}`);
-      this.broadcast('pong');
+    this.onMessage("chatMessageSent", async (client: Client, message: {
+      gameRoomId: string,
+      userIds: string[],
+      message: string,
+      token: string
+    }) => {
+      console.log(`Chat sent by client ${client.auth._id} in room ${message.gameRoomId }`);
+
+      const sanitizedMessage = sanitize(message.message);
+
+      // Update the chat log on the db, or create one if none exists
+      const messageToPush = {
+        username: client.auth.username,
+        message: sanitizedMessage,
+        createdAt: new Date()
+      };
+
+      const updatedChatlog = await ChatLog.findByIdAndUpdate(message.gameRoomId, { $push: { messages: messageToPush } });
+
+      // Safeguard in case a chatlog wasn't created alongside the game
+      if (!updatedChatlog) {
+        const chatLog = new ChatLog({
+          _id: this.roomId,
+          messages: [messageToPush]
+        });
+        await chatLog.save();
+      }
+
+      const clientsToExclude: Client[] = [];
+      this.connectedClients.forEach(client => {
+        if (!message.userIds.includes((client as any).userId)) clientsToExclude.push(client);
+      });
+
+      this.broadcast('chatMessageReceived', {
+        roomId: message.gameRoomId,
+        message: messageToPush
+      }, { except: clientsToExclude });
     });
   };
 
@@ -169,6 +206,22 @@ export class Lobby extends Room {
     this.presence.unsubscribe('gameOverPresence');
     this.presence.unsubscribe('gameDeletedPresence');
     this.presence.unsubscribe('userDeletedPresence');
+  }
+
+  static async onAuth(_token: string, options: any, _context: AuthContext): Promise<JwtPayload | boolean> {
+    try {
+      const user = await JWT.verify(options.token) as JwtPayload;
+
+      if (user) {
+        console.log(`User authenticated`, user);
+        return user;
+      }
+
+      console.log('Authentication failed');
+      return false;
+    } catch (err) {
+      throw new Error("Invalid or expired token");
+    }
   }
 
   logConnectedClients() {

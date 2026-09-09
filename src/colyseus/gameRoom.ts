@@ -4,8 +4,6 @@ import { CustomError } from "../classes/customError";
 import { EmailService } from "../emails/emailService";
 import { EFaction, EGameModes } from "../enums/game.enums";
 import { IPlayerData, IPopulatedUserData, ITurnMessage } from "../interfaces/gameInterface";
-import { sanitize } from "../middleware/sanitizeInput";
-import ChatLog from "../models/chatlogModel";
 import Game from "../models/gameModel";
 import User from '../models/userModel';
 import GameService from "../services/gameService";
@@ -137,43 +135,6 @@ export class GameRoom extends Room {
       } else {
         await this.handleTurn(message);
       }
-    });
-
-    this.onMessage("ping", (client: Client) => {
-      console.log(`Received game ping from user ${(client as any).userId}`);
-      this.broadcast('pong');
-    });
-
-    this.onMessage("chatMessage", async (client: Client, message: {
-      _id: string,
-      message: string,
-      token: string
-    }) => {
-      console.log(`Chat sent by client ${client.auth._id} in room ${this.roomId}`);
-      const sanitizedMessage = sanitize(message.message);
-
-      // Update the chat log on the db, or create one if none exists
-      const messageToPush = {
-        username: client.auth.username,
-        message: sanitizedMessage,
-        createdAt: new Date()
-      };
-
-      const updatedChatlog = await ChatLog.findByIdAndUpdate(this.roomId, { $push: { messages: messageToPush } });
-
-      // Safeguard in case a chatlog wasn't created alongside the game
-      if (!updatedChatlog) {
-        const chatLog = new ChatLog({
-          _id: this.roomId,
-          messages: [messageToPush]
-        });
-        await chatLog.save();
-      }
-
-      this.broadcast('chatMessageReceived', {
-        username: client.auth.username,
-        message: sanitizedMessage
-      });
     });
   }
 
