@@ -15,6 +15,7 @@ import AppErrorHandler from "./middleware/errorHandler";
 import { jwtStrategy, localStrategy } from "./middleware/passport";
 import { sanitizeInput } from "./middleware/sanitizeInput";
 import { ensureNotificationDefinitionsExist } from "./models/notificationModel";
+import { WebSocketTransport } from "@colyseus/ws-transport";
 
 const index = async () => {
   console.log('USING ENV:', process.env.NODE_ENV);
@@ -40,8 +41,6 @@ const index = async () => {
         }
       );
 
-      // app.use("/playground", playground()); // TODO: remove if not used
-
       // Routes
       app.use('/users', userRouter);
       app.use('/games', gameRouter);
@@ -58,7 +57,8 @@ const index = async () => {
     rooms: {
       lobby: defineRoom(Lobby),
       game_room: defineRoom(GameRoom).filterBy(['mongoId'])
-    }
+    },
+    transport: new WebSocketTransport({ maxPayload: 1024 * 1024 * 1 })
   });
 
   await databaseConnection();
