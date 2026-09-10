@@ -1,14 +1,14 @@
+import { JWT } from "@colyseus/auth";
 import { AuthContext, Client, Room } from "@colyseus/core";
+import { JwtPayload } from "jsonwebtoken";
 import { ObjectId } from "mongoose";
 import { CustomError } from "../classes/customError";
 import { EFaction } from "../enums/game.enums";
-import IGame, { IGameOver, IGameState } from "../interfaces/gameInterface";
-import GameService from "../services/gameService";
-import User from "../models/userModel";
+import IGame, { IGameState, IGameOver } from "../interfaces/gameInterface";
 import { sanitize } from "../middleware/sanitizeInput";
 import ChatLog from "../models/chatlogModel";
-import { JWT } from "@colyseus/auth";
-import { JwtPayload } from "jsonwebtoken";
+import GameService from "../services/gameService";
+import User from "../models/userModel";
 
 export class Lobby extends Room {
   connectedClients: Set<Client> = new Set();
@@ -22,7 +22,10 @@ export class Lobby extends Room {
     await User.findByIdAndUpdate(options.userId, { turnEmailSent: false }, { runValidators: true });
   }
 
-  onCreate(_options: { userId: string }): void {
+  onCreate(_options: {
+    userId: string,
+    token: string
+  }): void {
     // Updating an existing game
     this.presence.subscribe('gameUpdatedPresence', (message: {
       gameId: ObjectId
@@ -68,7 +71,6 @@ export class Lobby extends Room {
       lastPlayedAt: Date,
       gameOver: IGameOver
     }) => {
-      // console.log('MESSAGE ->', message);
       console.log(`[Lobby ${this.roomId}] Received subscribed gameOverPresence message`);
 
       const clientsToExclude: Client[] = [];
@@ -98,7 +100,6 @@ export class Lobby extends Room {
       userId: string,
       gameId: string
     }) => {
-      console.log('gameDeletedMessage logs', message);
       const result = await GameService.deleteGame(message.userId, message.gameId);
 
       this.presence.publish('gameDeletedPresence', {
@@ -112,7 +113,6 @@ export class Lobby extends Room {
       gameId: string,
       faction: EFaction
     }) => {
-      console.log('challengeAcceptedMessage logs', message);
       const userId = message.userId ;
       const gameId = message.gameId;
       const faction = message.faction as EFaction;
@@ -190,7 +190,7 @@ export class Lobby extends Room {
   };
 
   // Handle client leaving
-  onLeave(client: Client, _consented: boolean): void {
+  onLeave(client: Client): void {
     console.log(`[Lobby ${this.roomId}] Client left: ${(client as any).userId}`);
     this.presence.del(`user:${(client as any).userId}`);
     this.connectedClients.delete(client);
@@ -200,15 +200,9 @@ export class Lobby extends Room {
   // Handle lobby disposal
   onDispose(): void {
     console.log("[Lobby] Room disposed", this.roomId);
-
-    this.presence.unsubscribe('gameUpdatedPresence');
-    this.presence.unsubscribe('newGamePresence');
-    this.presence.unsubscribe('gameOverPresence');
-    this.presence.unsubscribe('gameDeletedPresence');
-    this.presence.unsubscribe('userDeletedPresence');
   }
 
-  static async onAuth(_token: string, options: any, _context: AuthContext): Promise<JwtPayload | boolean> {
+  async onAuth(client: Client, options: any, _context: AuthContext): Promise<JwtPayload | boolean> {
     try {
       const user = await JWT.verify(options.token) as JwtPayload;
 
@@ -228,5 +222,11 @@ export class Lobby extends Room {
     const clients = Array.from(this.connectedClients).map(client => { return (client as any).userId; });
 
     console.log(`[Lobby ${this.roomId}] Connected clients: ${clients}`);
+  }
+
+  onUncaughtException (err: Error, methodName: string) {
+    console.error("An error occurred in", methodName, ":", err);
+    err.cause; // original unhandled error
+    err.message; // original error message
   }
 }

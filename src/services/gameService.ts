@@ -1,4 +1,3 @@
-import { matchMaker } from "@colyseus/core";
 import { HydratedDocument, Types } from "mongoose";
 import { CustomError } from "../classes/customError";
 import { EFaction, EGameModes, EGameStatus, EWinConditions } from "../enums/game.enums";
@@ -9,6 +8,7 @@ import { createNewGameBoardState, createNewGameFactionState, updateUserStats } f
 import { EmailService } from "../emails/emailService";
 import { DiscordNotificationService } from "./discordNotificationService";
 import User from "../models/userModel";
+import { matchMaker } from "@colyseus/core";
 
 const GameService = {
   // GET ACTIONS

@@ -247,7 +247,7 @@ export class GameRoom extends Room {
   }
 
   // Handle client leaving
-  onLeave(client: Client, _consented: boolean): void {
+  onLeave(client: Client): void {
     this.connectedClients.delete((client as any).userId);
     console.log(`[Game] Client left room: ${(client as any).userId}`);
     this.logConnectedClients();

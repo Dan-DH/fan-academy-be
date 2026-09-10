@@ -4,21 +4,22 @@
   "version": "0.0.1",
   "description": "",
   "main": "dist/index.js",
+  "type": "module",
   "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "tsx dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npx tsc",
-    "start": "node dist/index.js",
-    "dev": "ts-node-dev src/index.ts",
     "lint:fix": "eslint --fix",
     "debug": "DEBUG=* ts-node-dev src/index.ts"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@colyseus/auth": "^0.16.6",
-    "@colyseus/core": "^0.16.16",
-    "@colyseus/schema": "^3.0.33",
-    "@colyseus/ws-transport": "^0.16.4",
+    "@colyseus/auth": "^0.17.6",
+    "@colyseus/core": "^0.17.32",
+    "@colyseus/schema": "^4.0.8",
+    "@colyseus/ws-transport": "^0.17.9",
     "@types/jsonwebtoken": "^9.0.10",
     "bcrypt": "6.0.0",
     "body-parser": "1.20.3",
@@ -39,6 +40,7 @@
     "xss": "^1.0.15"
   },
   "devDependencies": {
+    "@colyseus/playground": "^0.17.0",
     "@eslint/js": "9.6.0",
     "@faker-js/faker": "^9.8.0",
     "@getbrevo/brevo": "^6.0.3",
@@ -56,8 +58,7 @@
     "eslint": "9.6.0",
     "express-async-errors": "3.1.1",
     "globals": "15.8.0",
-    "ts-node": "10.9.2",
-    "ts-node-dev": "2.0.0",
+    "tsx": "^4.23.13",
     "typescript": "5.5.2",
     "typescript-eslint": "7.15.0"
   }
