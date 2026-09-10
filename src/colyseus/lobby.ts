@@ -137,7 +137,6 @@ export class Lobby extends Room {
       gameIds: string[]
     }) => {
       console.log(`[Lobby ${this.roomId}] Received subscribed userDeletedPresence message`);
-      console.log('MESSAGE', message);
 
       const clientsToExclude: Client[] = [];
       this.connectedClients.forEach(client => {
@@ -145,7 +144,6 @@ export class Lobby extends Room {
       });
 
       this.logConnectedClients();
-      console.log('clientsTOExclude', clientsToExclude);
       this.broadcast('userDeletedUpdate', message, { except: clientsToExclude });
     });
 

@@ -14,7 +14,6 @@ const GameService = {
   // GET ACTIONS
   async getCurrentGames(userId: string): Promise<IGame[] | null> {
     const userObjectId = new Types.ObjectId(userId);
-    console.log('userId', userId);
 
     // Check for games where a player has not played for over a week and update them before returning the game list to the player
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -52,8 +51,6 @@ const GameService = {
       status: EGameStatus.SEARCHING,
       gameMode
     }).sort({ createdAt: 1 }).populate('players.userData', 'username picture');
-
-    console.log('MATCHMAKING RESULT', JSON.stringify(result?._id));
 
     return result;
   },
@@ -229,17 +226,14 @@ const GameService = {
   },
 
   async getColyseusRoom(roomId: string, userId: string): Promise<IGame | null> {
-    console.log('getColyseusRoom gameId and userdata', roomId, userId);
     const gameId = new Types.ObjectId(roomId);
     const userData = new Types.ObjectId(userId);
 
-    console.log('GAME ID and USER DATA', gameId, userData);
     const result = await Game.findOne({
       _id: gameId,
       'players.userData': userData
     }).populate('players.userData', 'email picture preferences');
 
-    console.log('Result', result?._id);
     return result;
   },
 

@@ -110,8 +110,6 @@ export class GameRoom extends Room {
           faction,
           gameMode
         });
-        console.log('NEWGAME', newGame);
-
         if (!newGame) return undefined;
 
         this.roomId = newGame._id.toString();
@@ -130,7 +128,6 @@ export class GameRoom extends Room {
       console.log(`Turn sent by client ${(client as any).userId}`);
 
       if (message.gameOver) {
-        console.log('Game over!');
         await this.handleGameOver(message);
       } else {
         await this.handleTurn(message);

@@ -27,13 +27,6 @@ export const EmailService = {
 
     const emailParams = emailData.params ?? { placeHolder: '' };
 
-    console.log('email data', {
-      ...emailVars,
-      bcc: sendTo,
-      templateId: emailData.templateId,
-      params: emailParams
-    });
-
     try {
       const result = await emailClient.transactionalEmails.sendTransacEmail({
         ...emailVars,

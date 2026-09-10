@@ -314,8 +314,6 @@ export async function updateUserStats(userWon: IPopulatedPlayerData, userLost: I
 }> {
   const { winnerNewElo, loserNewElo } = updateELORatings(winnerData!, userWon.faction!, loserData!, userLost.faction!);
 
-  console.log('winnerNewElo', winnerNewElo);
-
   const addWinnerNewRating = { [ `stats.factions.${userWon.faction}.rating`]: winnerNewElo.rating };
   const addwinnerFactionTotalGames = { [`stats.factions.${userWon.faction}.games`]: 1 };
   const addwinnerFactionTotalWins = { [`stats.factions.${userWon.faction}.wins`]: 1 };
@@ -339,19 +337,6 @@ export async function updateUserStats(userWon: IPopulatedPlayerData, userLost: I
     { runValidators: true }
   );
 
-  console.log('query', {
-    $set: { ...addWinnerNewRating },
-    $inc: {
-      'stats.totalGames': 1,
-      'stats.totalWins': 1,
-      ...addwinnerFactionTotalGames,
-      ...addwinnerFactionTotalWins,
-      ...addWinnerFactionGame,
-      ...addWinnerFactionVictory,
-      ...addWinnerFactionVictoryType
-    }
-  });
-
   const addLoserNewRating = { [ `stats.factions.${userLost.faction}.rating`]: loserNewElo.rating };
   const addLoserFactionTotalGames = { [`stats.factions.${userLost.faction}.games`]: 1 };
   const addLoserFactionTotalLoses = { [`stats.factions.${userLost.faction}.loses`]: 1 };
@@ -373,19 +358,6 @@ export async function updateUserStats(userWon: IPopulatedPlayerData, userLost: I
       }
     }, { runValidators: true }
   );
-
-  console.log('loser query', {
-    $set: { ...addLoserNewRating },
-    $inc: {
-      'stats.totalGames': 1,
-      'stats.totalLoses': 1,
-      ...addLoserFactionTotalGames,
-      ...addLoserFactionTotalLoses,
-      ...addLoserFactionGame,
-      ...addLoserFactionLoss,
-      ...addLoserFactionLossType
-    }
-  });
 
   if (!updatedWinner || !updatedLoser) throw new CustomError(24);
   return {
