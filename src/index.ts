@@ -5,7 +5,6 @@ import cors from "cors";
 import express, { Request, Response } from "express";
 import "express-async-errors"; // Error MW patch
 import passport from "passport";
-import { GameRoom } from "./colyseus/gameRoom";
 import { Lobby } from "./colyseus/lobby";
 import gameRouter from './controllers/gameController';
 import userRouter from './controllers/userController';
@@ -54,10 +53,7 @@ const index = async () => {
       passport.use(localStrategy);
       passport.use(jwtStrategy);
     },
-    rooms: {
-      lobby: defineRoom(Lobby),
-      game_room: defineRoom(GameRoom).filterBy(['mongoId'])
-    },
+    rooms: { lobby: defineRoom(Lobby) },
     transport: new WebSocketTransport({ maxPayload: 1024 * 1024 * 1 })
   });
 
