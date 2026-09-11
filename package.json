@@ -7,8 +7,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "tsx dist/index.js",
+    "build": "tsc && tsc-alias",
+    "start": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint:fix": "eslint --fix",
     "debug": "DEBUG=* ts-node-dev src/index.ts"
@@ -16,15 +16,15 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "colyseus": "^0.18.1",
+    "@colyseus/auth": "^0.18.1",
     "@colyseus/core": "^0.18.1",
+    "@colyseus/schema": "^5.0.8",
     "@colyseus/tools": "^0.18.1",
     "@colyseus/ws-transport": "^0.18.1",
-    "@colyseus/auth": "^0.18.1",
-    "@colyseus/schema": "^5.0.8",
     "@types/jsonwebtoken": "^9.0.10",
     "bcrypt": "6.0.0",
     "body-parser": "1.20.3",
+    "colyseus": "^0.18.1",
     "connect-mongo": "5.1.0",
     "cookie": "^1.0.2",
     "cors": "2.8.5",
@@ -59,6 +59,7 @@
     "eslint": "9.6.0",
     "express-async-errors": "3.1.1",
     "globals": "15.8.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.23.13",
     "typescript": "5.5.2",
     "typescript-eslint": "7.15.0"
