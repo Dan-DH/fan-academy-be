@@ -25,7 +25,7 @@ export interface IGameOver {
  * Turn message Interface
  */
 export interface ITurnMessage {
-  _id: Types.ObjectId,
+  gameId: Types.ObjectId,
   currentTurn: IGameState[],
   turnNumber: number,
   newActivePlayer: Types.ObjectId,

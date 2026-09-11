@@ -4,7 +4,7 @@ import { JwtPayload } from "jsonwebtoken";
 import { HydratedDocument, ObjectId } from "mongoose";
 import { CustomError } from "../classes/customError";
 import { EFaction, EGameModes } from "../enums/game.enums";
-import IGame, { IGameState, IGameOver, IPlayerData, IPopulatedUserData, ITurnMessage } from "../interfaces/gameInterface";
+import IGame, { IPlayerData, IPopulatedUserData, ITurnMessage } from "../interfaces/gameInterface";
 import { sanitize } from "../middleware/sanitizeInput";
 import ChatLog from "../models/chatlogModel";
 import GameService from "../services/gameService";
@@ -30,75 +30,32 @@ export class Lobby extends Room {
     userId: string,
     token: string
   }): void {
-    // Updating an existing game
-    this.presence.subscribe('gameUpdatedPresence', (message: {
-      gameId: ObjectId
-      previousTurn: IGameState[],
-      newActivePlayer: string,
-      userIds: string[],
-      turnNumber: number,
-      lastPlayedAt: Date
-    }) => {
-      console.log(`[Lobby ${this.roomId}] Received subscribed gameUpdatedPresence message`);
-      this.logConnectedClients();
-
-      const clientsToExclude: Client[] = [];
-      this.connectedClients.forEach(client => {
-        if (!message.userIds.includes((client as any).userId)) clientsToExclude.push(client);
-      });
-
-      this.broadcast('gameListUpdate', message, { except: clientsToExclude });
-    });
-
-    // Updating with a new game (2 players)
+    // FIXME: keeping these ones for the time being. Remove when fixed:
     this.presence.subscribe('newGamePresence', (message: {
       game: IGame,
       userIds: string[]
     }) => {
-      console.log(`[Lobby ${this.roomId}] Received subscribed newGamePresence message`);
-      this.logConnectedClients();
-
-      const clientsToExclude: Client[] = [];
-      this.connectedClients.forEach(client => {
-        if (!message.userIds.includes((client as any).userId)) clientsToExclude.push(client);
-      });
-
-      this.broadcast('newGameListUpdate', message, { except: clientsToExclude });
+      this.newGamePresence(message);
     });
 
-    // Updating on a game ending
-    this.presence.subscribe('gameOverPresence', (message: {
-      gameId: ObjectId
-      previousTurn: IGameState[],
+    this.presence.subscribe('userDeletedPresence', (message: {
       userIds: string[],
-      turnNumber: number,
-      lastPlayedAt: Date,
-      gameOver: IGameOver
+      gameIds: string[]
     }) => {
-      console.log(`[Lobby ${this.roomId}] Received subscribed gameOverPresence message`);
+      console.log(`[Lobby ${this.roomId}] Received subscribed userDeletedPresence message`);
 
       const clientsToExclude: Client[] = [];
       this.connectedClients.forEach(client => {
         if (!message.userIds.includes((client as any).userId)) clientsToExclude.push(client);
       });
 
-      this.broadcast('gameOverUpdate', message, { except: clientsToExclude });
+      this.logConnectedClients();
+      this.broadcast('userDeletedUpdate', message, { except: clientsToExclude });
     });
 
-    // Deleting a challenge
-    this.presence.subscribe('gameDeletedPresence', (message: {
-      gameId: ObjectId,
-      userIds: string[]
-    }) => {
-      console.log(`[Lobby ${this.roomId}] Received subscribed gameDeletedPresence message`);
-
-      const clientsToExclude: Client[] = [];
-      this.connectedClients.forEach(client => {
-        if (!message.userIds.includes((client as any).userId)) clientsToExclude.push(client);
-      });
-
-      this.broadcast('gameDeletedUpdate', message, { except: clientsToExclude });
-    });
+    ////
+    ////
+    ////
 
     this.onMessage("gameDeletedMessage", async (client: Client, message: {
       userId: string,
@@ -129,26 +86,11 @@ export class Lobby extends Room {
       const result = await GameService.addPlayerTwo(game, faction as EFaction, userId);
 
       const userIds = result?.players.map(player => { return player.userData._id.toString();});
-      this.presence.publish('newGamePresence', {
-        game: result,
+
+      this.newGamePresence({
+        game: result!,
         userIds
       });
-    });
-
-    // Deleting a user
-    this.presence.subscribe('userDeletedPresence', (message: {
-      userIds: string[],
-      gameIds: string[]
-    }) => {
-      console.log(`[Lobby ${this.roomId}] Received subscribed userDeletedPresence message`);
-
-      const clientsToExclude: Client[] = [];
-      this.connectedClients.forEach(client => {
-        if (!message.userIds.includes((client as any).userId)) clientsToExclude.push(client);
-      });
-
-      this.logConnectedClients();
-      this.broadcast('userDeletedUpdate', message, { except: clientsToExclude });
     });
 
     this.onMessage("chatMessageSent", async (client: Client, message: {
@@ -209,9 +151,9 @@ export class Lobby extends Room {
       const gameLookingForPlayers = await GameService.matchmaking(userId, gameMode); // TODO: improve matchmaking
 
       if (gameLookingForPlayers) {
-        this.handleGameMatch(gameLookingForPlayers, faction, userId);
+        this.matchMakingGameFound(gameLookingForPlayers, faction, userId);
       } else {
-        this.handleNoGameMatch(message);
+        this.matchMakingNoGameFound(message);
       }
     });
   };
@@ -253,21 +195,27 @@ export class Lobby extends Room {
 
   onUncaughtException (err: Error, methodName: string) {
     console.error("An error occurred in", methodName, ":", err);
-    err.cause; // original unhandled error
-    err.message; // original error message
+    err.cause;
+    err.message;
   }
 
   async handleGameOver(message: ITurnMessage): Promise<void> {
     const result = await handleGameOverUtil(message);
-    this.presence.publish("gameOverPresence", result);
+
+    result.userIds.forEach(u => {
+      const client = this.clients.find(c => c.auth._id === u);
+      if (client) client.send('gameOverUpdate', result);
+    });
   }
 
   async handleTurn(message: ITurnMessage): Promise<void> {
+    const { gameId, currentTurn, turnNumber, newActivePlayer } = message;
+
     const lastPlayedAt = new Date();
-    const updatedGame = await Game.findByIdAndUpdate(message._id, {
-      previousTurn: message.currentTurn,
-      turnNumber: message.turnNumber,
-      activePlayer: message.newActivePlayer,
+    const updatedGame = await Game.findByIdAndUpdate(gameId, {
+      previousTurn: currentTurn, // FIXME:
+      turnNumber,
+      activePlayer: newActivePlayer,
       lastPlayedAt
     }, {
       new: true,
@@ -305,17 +253,20 @@ export class Lobby extends Room {
 
     // Retrieve user ids and publish update the users' game lists
     const userIds = updatedGame.players.map((player: IPlayerData) => player.userData._id.toString());
-    this.presence.publish("gameUpdatedPresence", {
-      gameId: message._id,
-      previousTurn: message.currentTurn,
-      turnNumber: message.turnNumber,
-      newActivePlayer: message.newActivePlayer.toString(),
-      lastPlayedAt,
-      userIds
+
+    userIds.forEach(u => {
+      const client = this.clients.find(c => c.auth._id === u);
+      if (client) client.send('gameListUpdate', {
+        gameId,
+        previousTurn: currentTurn,
+        newActivePlayer: newActivePlayer,
+        turnNumber,
+        lastPlayedAt
+      });
     });
   }
 
-  async handleGameMatch(gameMatch: HydratedDocument<IGame>, faction: EFaction, userId: string): Promise<void> {
+  async matchMakingGameFound(gameMatch: HydratedDocument<IGame>, faction: EFaction, userId: string): Promise<void> {
     console.log('Matchmaking found an open game');
 
     const updatedGame = await GameService.addPlayerTwo(gameMatch, faction, userId);
@@ -323,10 +274,11 @@ export class Lobby extends Room {
 
     // Send a message to update the game list
     const playerOneId = updatedGame.players[0].userData._id.toString();
-    this.presence.publish("newGamePresence", {
+
+    this.newGamePresence({
       game: updatedGame,
       userIds: [userId, playerOneId]
-    }); // TODO: change this to a normal message
+    });
 
     // Send email to player 1 if they are the first player
     if (updatedGame.activePlayer?.toString() === playerOneId) {
@@ -350,7 +302,7 @@ export class Lobby extends Room {
     }
   }
 
-  async handleNoGameMatch(message: {
+  async matchMakingNoGameFound(message: {
     userId: string,
     faction: EFaction,
     gameMode: EGameModes
@@ -364,9 +316,32 @@ export class Lobby extends Room {
     if (!newGame) return undefined;
 
     // Send a message to update the game list
-    this.presence.publish("newGamePresence", {
+    this.newGamePresence({
       game: newGame,
-      userIds: [userId] // FIXME: change to normal message
+      userIds: [userId]
+    });
+  }
+
+  newGamePresence(message: {
+    game: IGame,
+    userIds: string[] | undefined
+  }){
+    if (!message.userIds) console.error('newGamePresence() - no userIds');
+
+    // FIXME: looping through message to send message?
+    message.userIds!.forEach(u => {
+      const client = this.clients.find(c => c.auth._id === u);
+      if (client) client.send('newGameListUpdate', message);
+    });
+  }
+
+  gameDeletedPresence(message: {
+    gameId: ObjectId,
+    userIds: string[]
+  }) {
+    message.userIds.forEach(u => {
+      const client = this.clients.find(c => c.auth._id === u);
+      if (client) client.send('gameDeletedUpdate', message);
     });
   }
 }

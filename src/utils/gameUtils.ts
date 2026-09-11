@@ -250,7 +250,7 @@ export async function handleGameOverUtil(message: ITurnMessage) {
   const finishedAt = new Date();
   const { winner, winCondition } = message.gameOver!;
 
-  const updatedGame = await Game.findByIdAndUpdate(message._id, {
+  const updatedGame = await Game.findByIdAndUpdate(message.gameId, {
     previousTurn: message.currentTurn,
     turnNumber: message.turnNumber,
     activePlayer: message.newActivePlayer,
@@ -299,7 +299,7 @@ export async function handleGameOverUtil(message: ITurnMessage) {
   }
 
   return {
-    gameId: message._id,
+    gameId: message.gameId,
     previousTurn: message.currentTurn,
     userIds,
     turnNumber: message.turnNumber,
