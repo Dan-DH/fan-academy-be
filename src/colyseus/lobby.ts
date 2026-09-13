@@ -1,7 +1,7 @@
 import { JWT } from "@colyseus/auth";
 import { AuthContext, Client, matchMaker, Room } from "@colyseus/core";
 import { JwtPayload } from "jsonwebtoken";
-import { HydratedDocument, ObjectId } from "mongoose";
+import { HydratedDocument } from "mongoose";
 import { CustomError } from "../classes/customError";
 import { EFaction, EGameModes } from "../enums/game.enums";
 import IGame, { IPlayerData, IPopulatedUserData, ITurnMessage } from "../interfaces/gameInterface";
@@ -35,7 +35,7 @@ export class Lobby extends Room {
       game: IGame,
       userIds: string[]
     }) => {
-      this.newGamePresence(message);
+      this.sendNewGameToClient(message);
     });
 
     this.presence.subscribe('userDeletedPresence', (message: {
@@ -63,7 +63,12 @@ export class Lobby extends Room {
     }) => {
       const result = await GameService.deleteGame(message.userId, message.gameId);
 
-      this.presence.publish('gameDeletedPresence', {
+      const clientsToExclude: Client[] = [];
+      this.connectedClients.forEach(client => {
+        if (!result.includes((client as any).userId)) clientsToExclude.push(client);
+      });
+
+      this.sendGameDeletedToClient({
         gameId: message.gameId,
         userIds: result
       });
@@ -87,7 +92,7 @@ export class Lobby extends Room {
 
       const userIds = result?.players.map(player => { return player.userData._id.toString();});
 
-      this.newGamePresence({
+      this.sendNewGameToClient({
         game: result!,
         userIds
       });
@@ -275,7 +280,7 @@ export class Lobby extends Room {
     // Send a message to update the game list
     const playerOneId = updatedGame.players[0].userData._id.toString();
 
-    this.newGamePresence({
+    this.sendNewGameToClient({
       game: updatedGame,
       userIds: [userId, playerOneId]
     });
@@ -316,13 +321,13 @@ export class Lobby extends Room {
     if (!newGame) return undefined;
 
     // Send a message to update the game list
-    this.newGamePresence({
+    this.sendNewGameToClient({
       game: newGame,
       userIds: [userId]
     });
   }
 
-  newGamePresence(message: {
+  sendNewGameToClient(message: {
     game: IGame,
     userIds: string[] | undefined
   }){
@@ -335,10 +340,11 @@ export class Lobby extends Room {
     });
   }
 
-  gameDeletedPresence(message: {
-    gameId: ObjectId,
+  sendGameDeletedToClient(message: {
+    gameId: string,
     userIds: string[]
   }) {
+    console.log('gameId and user', message.gameId, message.userIds);
     message.userIds.forEach(u => {
       const client = this.clients.find(c => c.auth._id === u);
       if (client) client.send('gameDeletedUpdate', message);
