@@ -514,6 +514,10 @@ const GameSchema = new Schema({
     type: String,
     enum: EGameModes,
     required: true
+  },
+  map: {
+    type: Number,
+    required: true
   }
 });
 
