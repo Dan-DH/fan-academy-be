@@ -202,6 +202,7 @@ export default interface IGame {
   _id: Types.ObjectId;
   players: IPlayerData[];
   turnNumber: number,
+  map: number,
   previousTurn: IGameState[];
   gameOver?: IGameOver,
   status: EGameStatus;
