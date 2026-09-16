@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { EActionClass, EActionType, EAttackType, EClass, EFaction, EGameModes, EGameStatus, EHeroes, EItems, ETiles, EWinConditions } from "../enums/game.enums";
+import { EActionClass, EActionType, EBoardUnit, EClass, EFaction, EGameModes, EGameStatus, EHeroes, EItems, ETiles, EWinConditions } from "../enums/game.enums";
 import { IUserFactionStats, IUserPreferences } from "./userInterface";
 
 /**
@@ -35,16 +35,13 @@ export interface ITurnMessage {
 /**
  * Item Interface
  */
-export interface IItem {
+export interface IItem { // FIXME: this can also be trimmed a bit
   class: EClass;
   faction: EFaction;
   unitId: string; // userId_itemName_itemNumber
   itemType: EItems;
   boardPosition: number; // 45-51
-  row: number;
   belongsTo: number;
-  canHeal: boolean;
-  dealsDamage: boolean;
 }
 
 /**
@@ -52,55 +49,27 @@ export interface IItem {
  */
 export interface IHero {
   class: EClass;
-  unitId: string; // userId_unitName_unitNumber
-  belongsTo: number;
-  boardPosition: number;
   faction: EFaction;
-  unitType: EHeroes;
-  row: number;
-  col: number;
-  baseHealth: number;
-  maxHealth: number;
-  currentHealth: number;
-  isKO: boolean;
-  lastBreath: boolean;
-  movement: number;
-  attackRange: number;
-  healingRange: number;
-  buffRange: number;
-  attackType: EAttackType;
-  basePower: number;
-  physicalDamageResistance: number;
-  magicalDamageResistance: number;
-  basePhysicalDamageResistance: number;
-  baseMagicalDamageResistance: number;
-  factionEquipment: boolean;
-  runeMetal: boolean;
-  shiningHelm: boolean;
-  superCharge: boolean;
-  canHeal: boolean;
-  canBuff: boolean;
+  unitType?: EHeroes;
+  unitId: string; // userId_unitName_unitNumber
+  boardPosition: number;
+  belongsTo: number;
+  currentHealth?: number;
+  lastBreath?: boolean;
   unitsConsumed?: number
-  priestessDebuff: boolean;
-  attackTile: boolean;
-  magicalResistanceTile: boolean;
-  physicalResistanceTile: boolean;
-  manaVial: boolean;
-  speedTile: boolean;
-  dwarvenBrew: boolean;
-  engineerShield?: string;
-  annihilatorDebuff: boolean;
+  status?: number;
   shieldingAlly?: string;
-  paladinAura: number;
+  boardType: EBoardUnit;
 }
 /**
  * Faction Interface
  */
+// FIXME: changed to partial to fix type issue creating generic data. Remove is problematic
 export interface IFaction {
   userId: string;
   factionName: EFaction;
-  unitsInHand: (IHero | IItem)[];
-  unitsInDeck: (IHero | IItem)[];
+  unitsInHand: (Partial<IHero> | IItem)[];
+  unitsInDeck: (Partial<IHero> | IItem)[];
 }
 
 /**
@@ -155,24 +124,16 @@ export interface ICrystal {
   belongsTo: number;
   maxHealth: number;
   currentHealth: number;
-  isDestroyed: boolean;
-  isLastCrystal: boolean;
   boardPosition: number;
-  debuffLevel: number;
-  row: number;
-  col: number;
-  engineerShield?: string;
-  paladinAura: number;
-  annihilatorDebuff: boolean;
-  physicalDamageResistance: number;
-  magicalDamageResistance: number;
-  basePhysicalDamageResistance: number;
-  baseMagicalDamageResistance: number;
+  status: number;
+  boardType: EBoardUnit;
+
 }
 
 /**
  * Tile Interface
  */
+// FIXME: we should not send the tiles at all to the FE. Replace with array of units (hero/crystal)
 export interface ITile {
   row: number;
   col: number;
@@ -180,9 +141,6 @@ export interface ITile {
   x: number;
   y: number;
   boardPosition: number;
-  obstacle: boolean;
-  hero?: IHero | undefined;
-  crystal?: ICrystal | undefined;
 }
 
 /**
@@ -191,7 +149,7 @@ export interface ITile {
 export interface IGameState {
   player1?: IPlayerState;
   player2?: IPlayerState;
-  boardState?: ITile[];
+  boardState?: (IHero | ICrystal)[];
   action?: ITurnAction;
 }
 

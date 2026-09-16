@@ -4,12 +4,11 @@ import { EFaction, EGameModes, EGameStatus, EWinConditions } from "../enums/game
 import IGame, { IPlayerData, IPopulatedPlayerData, IPopulatedUserData } from "../interfaces/gameInterface";
 import ChatLog from "../models/chatlogModel";
 import Game from "../models/gameModel";
-import { createNewGameBoardState, createNewGameFactionState, updateUserStats } from "../utils/gameUtils";
+import { createNewGameCrystals, createNewGameFactionState, updateUserStats } from "../utils/gameUtils";
 import { EmailService } from "../emails/emailService";
 import { DiscordNotificationService } from "./discordNotificationService";
 import User from "../models/userModel";
 import { matchMaker } from "@colyseus/core";
-import { mapTemplates } from "../utils/mapTemplates";
 
 const GameService = {
   // GET ACTIONS
@@ -112,8 +111,6 @@ const GameService = {
     const chatLog = new ChatLog({ _id: gameId });
     await chatLog.save();
 
-    const randomIndexNumber = Math.floor(Math.random() * mapTemplates.length);
-
     const newGame = new Game({
       _id: gameId,
       players: [
@@ -124,7 +121,7 @@ const GameService = {
         ...opponentId ? [{ userData: new Types.ObjectId(opponentId) }] : []
       ],
       turnNumber: 1,
-      map: mapTemplates[randomIndexNumber],
+      map: Math.floor(Math.random() * 7), // TODO: hardcoded? Update if number of templates changes
       status: opponentId ? EGameStatus.CHALLENGE : EGameStatus.SEARCHING,
       createdAt: new Date(),
       lastPlayedAt: new Date(),
@@ -208,7 +205,7 @@ const GameService = {
         }
       });
 
-      gameLookingForPlayers.previousTurn[0].boardState = createNewGameBoardState();
+      gameLookingForPlayers.previousTurn[0].boardState = createNewGameCrystals(gameLookingForPlayers.map);
 
       gameLookingForPlayers.status = EGameStatus.PLAYING;
 

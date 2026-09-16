@@ -1,6 +1,6 @@
 import mongoose, { Types } from 'mongoose';
 import IGame from '../interfaces/gameInterface';
-import { EActionClass, EActionType, EAttackType, EFaction, EGameModes, ETiles, EWinConditions } from '../enums/game.enums';
+import { EActionClass, EActionType, EFaction, EGameModes, EWinConditions } from '../enums/game.enums';
 
 const { Schema, model } = mongoose;
 
@@ -18,6 +18,23 @@ const GameOverSchema = new Schema({
     required: true
   }
 }, { _id: false });
+
+/**
+ * UnitOrItem Schema since Mongoose doesn't allow arrays of mixed schemas
+ */
+const HeroOrCrystalSchema = new Schema(
+  {
+    boardType: {
+      type: String,
+      enum: ['hero', 'crystal'],
+      required: true
+    }
+  },
+  {
+    discriminatorKey: 'boardType',
+    _id: false
+  }
+);
 
 /**
  * Item Schema
@@ -39,56 +56,12 @@ const CrystalSchema = new Schema({
     type: Number,
     required: true
   },
-  physicalDamageResistance: {
-    type: Number,
-    required: true
-  },
-  basePhysicalDamageResistance: {
-    type: Number,
-    required: true
-  },
-  magicalDamageResistance: {
-    type: Number,
-    required: true
-  },
-  baseMagicalDamageResistance: {
-    type: Number,
-    required: true
-  },
-  row: {
-    type: Number,
-    required: true
-  },
-  col: {
-    type: Number,
-    required: true
-  },
-  isDestroyed: {
-    type: Boolean,
-    required: true
-  },
-  isLastCrystal: {
-    type: Boolean,
-    required: true
-  },
   boardPosition: {
     type: Number,
     required: true
   },
-  debuffLevel: {
+  status: {
     type: Number,
-    required: true
-  },
-  engineerShield: {
-    type: String,
-    required: false
-  },
-  paladinAura: {
-    type: Number,
-    required: true
-  },
-  annihilatorDebuff: {
-    type: Boolean,
     required: true
   }
 }, { _id: false });
@@ -117,19 +90,6 @@ const ItemSchema = new Schema({
     type: Number,
     required: true,
     default: 1
-  },
-  row: {
-    type: Number,
-    required: true,
-    default: 10
-  },
-  canHeal: {
-    type: Boolean,
-    required: true
-  },
-  dealsDamage: {
-    type: Boolean,
-    required: true
   }
 }, { _id: false });
 
@@ -143,8 +103,8 @@ const HeroSchema = new Schema({
   },
   unitType: {
     type: String,
-    required: true
-  },
+    required: false
+  }, // FIXME: do we need the type of do we get from the unit name?
   unitId: {
     type: String,
     required: true
@@ -153,158 +113,37 @@ const HeroSchema = new Schema({
     type: Number,
     required: true
   },
-  row: {
-    type: Number,
-    required: true
-  },
-  col: {
-    type: Number,
-    required: true
-  },
-  baseHealth: {
-    type: Number,
-    required: true
-  },
-  maxHealth: {
-    type: Number,
-    required: true
-  },
-  currentHealth: {
-    type: Number,
-    required: true
-  },
-  isKO: {
-    type: Boolean,
-    default: false
-  },
-  lastBreath: {
-    type: Boolean,
-    default: true
-  },
-  movement: {
-    type: Number,
-    required: true
-  },
-  attackRange: {
-    type: Number,
-    required: true
-  },
-  healingRange: {
-    type: Number,
-    required: true
-  },
-  buffRange: {
-    type: Number,
-    required: true
-  },
-  attackType: {
-    type: String,
-    enum: EAttackType,
-    required: true
-  },
-  basePower: {
-    type: Number,
-    required: true
-  },
-  physicalDamageResistance: {
-    type: Number,
-    required: true
-  },
-  basePhysicalDamageResistance: {
-    type: Number,
-    required: true
-  },
-  magicalDamageResistance: {
-    type: Number,
-    required: true
-  },
-  baseMagicalDamageResistance: {
-    type: Number,
-    required: true
-  },
-  factionEquipment: {
-    type: Boolean,
-    required: true
-  },
-  runeMetal: {
-    type: Boolean,
-    required: true
-  },
-  shiningHelm: {
-    type: Boolean,
-    required: true
-  },
-  superCharge: {
-    type: Boolean,
-    required: true
-  },
   belongsTo: {
     type: Number,
     required: true,
     default: 1
   },
-  canHeal: {
-    type: Boolean,
-    required: true
+  currentHealth: {
+    type: Number,
+    required: false
   },
-  canBuff: {
+  lastBreath: {
     type: Boolean,
-    required: true
+    default: false
   },
   unitsConsumed: {
     type: Number,
     default: 0
   },
-  priestessDebuff: {
-    type: Boolean,
-    required: true
-  },
-  attackTile: {
-    type: Boolean,
-    required: true
-  },
-  magicalResistanceTile: {
-    type: Boolean,
-    required: true
-  },
-  physicalResistanceTile: {
-    type: Boolean,
-    required: true
-  },
-  manaVial: {
-    type: Boolean,
-    required: true
-  },
-  speedTile: {
-    type: Boolean,
-    required: true
-  },
-  dwarvenBrew: {
-    type: Boolean,
-    required: true
-  },
-  engineerShield: {
-    type: String,
-    required: false
-  },
-  annihilatorDebuff: {
-    type: Boolean,
-    required: true
+  status: {
+    type: Number,
+    default: 0
   },
   shieldingAlly: {
     type: String,
     required: false
-  },
-  paladinAura: {
-    type: Number,
-    required: true
   }
 }, { _id: false });
 
 /**
- * UnitOrItem Schema since Mongoose doesn't allow arrays of mixed schemas
+ * HeroOrItemSchema since Mongoose doesn't allow arrays of mixed schemas
  */
-const UnitOrItemSchema = new Schema(
+const HeroOrItemSchema = new Schema(
   {
     class: {
       type: String,
@@ -328,11 +167,11 @@ const FactionSchema = new Schema({
     required: true
   },
   unitsInHand: {
-    type: [UnitOrItemSchema],
+    type: [HeroOrItemSchema],
     default: []
   },
   unitsInDeck: {
-    type: [UnitOrItemSchema],
+    type: [HeroOrItemSchema],
     default: []
   }
 }, { _id: false });
@@ -399,45 +238,45 @@ const PlayerStateSchema = new Schema({
 /**
  * Tile Schema
  */
-const TileSchema = new Schema({
-  row: {
-    type: Number,
-    required: true
-  },
-  col: {
-    type: Number,
-    required: true
-  },
-  boardPosition: {
-    type: Number,
-    required: true
-  },
-  tileType: {
-    type: String,
-    enum: ETiles,
-    required: true
-  },
-  x: {
-    type: Number,
-    required: true
-  },
-  y: {
-    type: Number,
-    required: true
-  },
-  obstacle: {
-    type: Boolean,
-    required: true
-  },
-  hero: {
-    type: HeroSchema,
-    required: false
-  },
-  crystal: {
-    type: CrystalSchema,
-    required: false
-  }
-}, { _id: false });
+// const TileSchema = new Schema({
+//   row: {
+//     type: Number,
+//     required: true
+//   },
+//   col: {
+//     type: Number,
+//     required: true
+//   },
+//   boardPosition: {
+//     type: Number,
+//     required: true
+//   },
+//   tileType: {
+//     type: String,
+//     enum: ETiles,
+//     required: true
+//   },
+//   x: {
+//     type: Number,
+//     required: true
+//   },
+//   y: {
+//     type: Number,
+//     required: true
+//   },
+//   obstacle: {
+//     type: Boolean,
+//     required: true
+//   },
+//   hero: {
+//     type: HeroSchema,
+//     required: false
+//   },
+//   crystal: {
+//     type: CrystalSchema,
+//     required: false
+//   }
+// }, { _id: false });
 
 /**
  * GameState Schema
@@ -452,7 +291,7 @@ const GameStateSchema = new Schema({
     required: false
   },
   boardState: {
-    type: [TileSchema],
+    type: [HeroOrCrystalSchema],
     default: []
   },
   action: {
@@ -460,6 +299,9 @@ const GameStateSchema = new Schema({
     required: false
   }
 }, { _id: false });
+
+(GameStateSchema.path('boardState') as mongoose.Schema.Types.DocumentArray).discriminator('hero', HeroSchema);
+(GameStateSchema.path('boardState') as mongoose.Schema.Types.DocumentArray).discriminator('crystal', CrystalSchema);
 
 /**
  * RoomState Schema

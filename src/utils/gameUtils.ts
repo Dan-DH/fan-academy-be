@@ -1,20 +1,18 @@
 import { SortOrder } from "mongoose";
-import { EFaction, EGameModes, EGameStatus, ETiles, EWinConditions } from "../enums/game.enums";
+import { EBoardUnit, EFaction, EGameModes, EGameStatus, ETiles, EWinConditions } from "../enums/game.enums";
 import { ELeaderboardEnum } from "../enums/leaderboard.enums";
 import { createCouncilFactionData } from "../game/factions/councilData";
 import { createDwarvesFactionData } from "../game/factions/dwarvesData";
 import { createElvesFactionData } from "../game/factions/elvesData";
-import { createTileData } from "../game/tileData";
 import Game from "../models/gameModel";
-
-import { ICoordinates, IFaction, IHero, IItem, IPlayerData, IPopulatedPlayerData, ITile, ITurnMessage } from "../interfaces/gameInterface";
-import { mapTemplates } from "./mapTemplates";
+import { ICrystal, IFaction, IHero, IItem, IPlayerData, IPopulatedPlayerData, ITurnMessage } from "../interfaces/gameInterface";
 import { CustomError } from "../classes/customError";
 import { EmailService } from "../emails/emailService";
 import { DiscordNotificationService } from "../services/discordNotificationService";
 import IUser from "../interfaces/userInterface";
 import { updateELORatings } from "../game/elo";
 import User from "../models/userModel";
+import { mapTemplates } from "./mapTemplates";
 
 /**
  * Creates a starting state for a given faction, randomizing the assets in deck and dealing a starting hand
@@ -30,7 +28,7 @@ export function createNewGameFactionState(userId: string, playerFaction: EFactio
 }
 
 // Fisher-Yates shuffle algorithm
-export function shuffleArray(array: (IHero | IItem)[]): (IHero | IItem)[] {
+export function shuffleArray(array: (Partial<IHero> | IItem)[]): (Partial<IHero> | IItem)[] {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1)); // Random index from 0 to i
     [array[i], array[j]] = [array[j], array[i]]; // Swap elements
@@ -38,67 +36,24 @@ export function shuffleArray(array: (IHero | IItem)[]): (IHero | IItem)[] {
   return array;
 }
 
-/**
- *
- * Create map
- *
- */
-/**
- * Creates a new map randomly choosing from a series of templates
- */
-export function createNewGameBoardState(): ITile[] {
-  const randomIndexNumber = Math.floor(Math.random() * mapTemplates.length);
-  const mapData = mapTemplates[randomIndexNumber];
-  const newBoard: ITile[] = [];
-  const centerPoints = calculateAllCenterPoints();
+export function createNewGameCrystals(map: number): ICrystal[] {
+  const mappedCrystals = mapTemplates[map];
+  const crystals: ICrystal[] = [];
 
-  const crystalsTypeArray = [ETiles.CRYSTAL_SMALL, ETiles.CRYSTAL, ETiles.CRYSTAL_BIG];
+  mappedCrystals.forEach(c => {
+    const crystalHp = getCrystalHp(c.tileType);
 
-  for (const tileData of mapData) {
-    const { row, col, tileType } = tileData;
-    const boardPosition = getBoardPositionFromCoordinates(col, row);
-    const { x, y } = centerPoints[boardPosition];
-
-    let crystalData;
-    const isCrystalTile = tileType && crystalsTypeArray.includes(tileType);
-
-    if (isCrystalTile) {
-      const crystalHp = getCrystalHp(tileType);
-
-      crystalData = {
-        unitId: `crystal_${boardPosition}`,
-        belongsTo: col! > 4 ? 2 : 1,
-        maxHealth: crystalHp,
-        currentHealth: crystalHp,
-        isDestroyed: false,
-        isLastCrystal: tileType === ETiles.CRYSTAL_BIG ? true : false,
-        boardPosition,
-        row,
-        col,
-        debuffLevel: 0,
-        paladinAura: 0,
-        annihilatorDebuff: false,
-        physicalDamageResistance: 0,
-        magicalDamageResistance: 0,
-        basePhysicalDamageResistance: 0,
-        baseMagicalDamageResistance: 0
-      };
-    }
-
-    const tile = createTileData({
-      row,
-      col,
-      x,
-      y,
-      boardPosition,
-      tileType,
-      obstacle: isCrystalTile ? true : false,
-      ...isCrystalTile ? { crystal: crystalData } : {}
+    crystals.push({
+      unitId: `crystal_${c.boardPosition}`,
+      belongsTo: c.col! > 4 ? 2 : 1,
+      maxHealth: crystalHp,
+      currentHealth: crystalHp, // FIXME:
+      boardPosition: c.boardPosition,
+      status: 0,
+      boardType: EBoardUnit.CRYSTAL
     });
-    newBoard.push(tile);
-  }
-
-  return newBoard;
+  });
+  return crystals;
 }
 
 export function getCrystalHp(tileType: ETiles) {
@@ -122,68 +77,10 @@ export function getCrystalHp(tileType: ETiles) {
   return health;
 }
 
-export function calculateAllCenterPoints(): ICoordinates[] {
-  // Adding coordinates for the board tiles
-  const centerPoints: ICoordinates[] = calculateBoardCenterPoints();
-
-  // Adding coordinates for the items in the player's hand
-  const leftMostItem = {
-    x: 700,
-    y: 745
-  };
-
-  for (let item = 0; item < 6; item++) {
-    centerPoints.push({
-      x: leftMostItem.x,
-      y: leftMostItem.y
-    });
-
-    leftMostItem.x += 80;
-  }
-
-  // Adding coordinates for the deck (door)
-  centerPoints.push({
-    x: 435,
-    y: 720
-  });
-
-  return centerPoints;
-}
-
-export function calculateBoardCenterPoints(): ICoordinates[] {
-  const topLeft = {
-    x: 545,
-    y: 225,
-    row: 0,
-    col: 0
-  };
-
-  const result: ICoordinates[] = [];
-  let boardPosition = 0;
-
-  for (let row = 0; row < 5; row++) {
-    for (let col = 0; col < 9; col++) {
-      const x = topLeft.x + col * 90;
-      const y = topLeft.y + row * 90;
-
-      result.push({
-        x,
-        y,
-        row,
-        col,
-        boardPosition
-      });
-
-      boardPosition++;
-    }
-  }
-  return result;
-}
-
-export function shuffleDeck(unitsDeck: IHero[], itemsDeck: IItem[]) {
+export function shuffleDeck(unitsDeck: Partial<IHero>[], itemsDeck: Partial<IItem>[]) {
   const shuffledUnits = shuffleArray(unitsDeck);
 
-  const startingHeroes: (IHero | IItem)[] = shuffledUnits.splice(0, 3);
+  const startingHeroes: (Partial<IHero> | IItem)[] = shuffledUnits.splice(0, 3);
   const shuffledDeck = shuffleArray([...shuffledUnits, ...itemsDeck]);
 
   const mappedDeck = [...startingHeroes, ...shuffledDeck].map((elem, index) => {
@@ -239,11 +136,6 @@ export function getProfilePaginationSortOrder(boardType: ELeaderboardEnum) {
   };
 
   return (sortTypeMap[boardType] ?? { _id: 1 }) as { [key: string]: SortOrder };
-}
-
-function getBoardPositionFromCoordinates(col: number, row: number) {
-  const WIDTH = 9;
-  return row * WIDTH + col;
 }
 
 export async function handleGameOverUtil(message: ITurnMessage) {

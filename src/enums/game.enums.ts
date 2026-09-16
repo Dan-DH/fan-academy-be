@@ -118,3 +118,8 @@ export enum EGameModes {
   RANKED = 'ranked',
   CASUAL = 'casual'
 }
+
+export enum EBoardUnit {
+  HERO = 'hero',
+  CRYSTAL = 'crystal'
+}
