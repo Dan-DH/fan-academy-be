@@ -50,16 +50,17 @@ export interface IItem { // FIXME: this can also be trimmed a bit
 export interface IHero {
   class: EClass;
   faction: EFaction;
-  unitType?: EHeroes;
+  unitType: EHeroes;
   unitId: string; // userId_unitName_unitNumber
+  boardType: EBoardUnit;
   boardPosition: number;
   belongsTo: number;
   currentHealth?: number;
+  maxHealth?: number;
   lastBreath?: boolean;
   unitsConsumed?: number
   status?: number;
   shieldingAlly?: string;
-  boardType: EBoardUnit;
 }
 /**
  * Faction Interface
@@ -127,7 +128,6 @@ export interface ICrystal {
   boardPosition: number;
   status: number;
   boardType: EBoardUnit;
-
 }
 
 /**

@@ -103,8 +103,8 @@ const HeroSchema = new Schema({
   },
   unitType: {
     type: String,
-    required: false
-  }, // FIXME: do we need the type of do we get from the unit name?
+    required: true
+  },
   unitId: {
     type: String,
     required: true
@@ -117,6 +117,10 @@ const HeroSchema = new Schema({
     type: Number,
     required: true,
     default: 1
+  },
+  maxHealth: {
+    type: Number,
+    required: false
   },
   currentHealth: {
     type: Number,

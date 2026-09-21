@@ -1,4 +1,4 @@
-import { EFaction, EItems, EClass, EBoardUnit } from "../../enums/game.enums";
+import { EFaction, EItems, EClass, EBoardUnit, EHeroes } from "../../enums/game.enums";
 import { IFaction, IHero, IItem } from "../../interfaces/gameInterface";
 import { shuffleDeck } from "../../utils/gameUtils";
 
@@ -29,18 +29,22 @@ function createDwarvesDeck(userId: string): (Partial<IHero> | Partial<IItem>)[] 
   for (let index = 0; index < 3; index++) {
     const paladin = {
       unitId: `${userId}_paladin_${index}`,
+      unitType: EHeroes.PALADIN,
       ...genericData
     };
     const gunner =  {
       unitId: `${userId}_gunner_${index}`,
+      unitType: EHeroes.GUNNER,
       ...genericData
     };
     const grenadier =  {
       unitId: `${userId}_grenadier_${index}`,
+      unitType: EHeroes.GRENADIER,
       ...genericData
     };
     const engineer =  {
       unitId: `${userId}_engineer_${index}`,
+      unitType: EHeroes.ENGINEER,
       ...genericData
     };
 
@@ -103,7 +107,8 @@ function createDwarvesDeck(userId: string): (Partial<IHero> | Partial<IItem>)[] 
   unitsDeck.push({
     unitId: `${userId}_annihilator`,
     class: EClass.HERO,
-    faction: EFaction.DWARVES
+    faction: EFaction.DWARVES,
+    unitType: EHeroes.ANNIHILATOR
   });
 
   const shuffledDeck = shuffleDeck(unitsDeck, itemsDeck);

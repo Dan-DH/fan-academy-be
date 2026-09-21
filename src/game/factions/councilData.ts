@@ -1,4 +1,4 @@
-import { EFaction, EItems, EClass, EBoardUnit } from "../../enums/game.enums";
+import { EFaction, EItems, EClass, EBoardUnit, EHeroes } from "../../enums/game.enums";
 import { IFaction, IHero, IItem } from "../../interfaces/gameInterface";
 import { shuffleDeck } from "../../utils/gameUtils";
 
@@ -29,20 +29,24 @@ function createCouncilDeck(userId: string): (Partial<IHero> | IItem)[] {
   for (let index = 0; index < 3; index++) {
     const archer = {
       unitId: `${userId}_archer_${index}`,
+      unitType: EHeroes.ARCHER,
       ...genericData
     };
     const knight =  {
       unitId: `${userId}_knight_${index}`,
+      unitType: EHeroes.KNIGHT,
       ...genericData
 
     };
     const wizard =  {
       unitId: `${userId}_wizard_${index}`,
+      unitType: EHeroes.WIZARD,
       ...genericData
 
     };
     const cleric =  {
       unitId: `${userId}_cleric_${index}`,
+      unitType: EHeroes.CLERIC,
       ...genericData
 
     };
@@ -105,7 +109,8 @@ function createCouncilDeck(userId: string): (Partial<IHero> | IItem)[] {
   unitsDeck.push({
     unitId: `${userId}_ninja`,
     class: EClass.HERO,
-    faction: EFaction.COUNCIL
+    faction: EFaction.COUNCIL,
+    unitType: EHeroes.NINJA
   });
 
   const shuffledDeck = shuffleDeck(unitsDeck, itemsDeck);
