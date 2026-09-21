@@ -162,30 +162,6 @@ const HeroOrItemSchema = new Schema(
 );
 
 /**
- * Faction Schema
- */
-const FactionSchema = new Schema({
-  factionName: {
-    type: String,
-    enum: EFaction,
-    required: true
-  },
-  unitsInHand: {
-    type: [HeroOrItemSchema],
-    default: []
-  },
-  unitsInDeck: {
-    type: [HeroOrItemSchema],
-    default: []
-  }
-}, { _id: false });
-
-(FactionSchema.path('unitsInHand') as mongoose.Schema.Types.DocumentArray).discriminator('hero', HeroSchema);
-(FactionSchema.path('unitsInHand') as mongoose.Schema.Types.DocumentArray).discriminator('item', ItemSchema);
-(FactionSchema.path('unitsInDeck') as mongoose.Schema.Types.DocumentArray).discriminator('hero', HeroSchema);
-(FactionSchema.path('unitsInDeck') as mongoose.Schema.Types.DocumentArray).discriminator('item', ItemSchema);
-
-/**
  * user Schema
  */
 const UserSchema = new Schema({
@@ -233,12 +209,22 @@ const PlayerStateSchema = new Schema({
     type: Types.ObjectId,
     required: true
   },
-  factionData: {
-    type: FactionSchema,
-    required: true
+  hand: {
+    type: [HeroOrItemSchema],
+    default: []
+  },
+  deck: {
+    type: [HeroOrItemSchema],
+    default: []
   }
 }, { _id: false });
 
+(PlayerStateSchema.path('hand') as mongoose.Schema.Types.DocumentArray).discriminator('hero', HeroSchema);
+(PlayerStateSchema.path('hand') as mongoose.Schema.Types.DocumentArray).discriminator('item', ItemSchema);
+(PlayerStateSchema.path('deck') as mongoose.Schema.Types.DocumentArray).discriminator('hero', HeroSchema);
+(PlayerStateSchema.path('deck') as mongoose.Schema.Types.DocumentArray).discriminator('item', ItemSchema);
+
+// FIXME: remove tile schema and interface?
 /**
  * Tile Schema
  */

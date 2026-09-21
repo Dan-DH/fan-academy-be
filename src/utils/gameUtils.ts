@@ -1,11 +1,10 @@
 import { SortOrder } from "mongoose";
 import { EBoardUnit, EFaction, EGameModes, EGameStatus, ETiles, EWinConditions } from "../enums/game.enums";
 import { ELeaderboardEnum } from "../enums/leaderboard.enums";
-import { createCouncilFactionData } from "../game/factions/councilData";
-import { createDwarvesFactionData } from "../game/factions/dwarvesData";
-import { createElvesFactionData } from "../game/factions/elvesData";
+import { createDwarvesDeckAndHand } from "../game/factions/dwarvesData";
+import { createElvesDeckAndHand } from "../game/factions/elvesData";
 import Game from "../models/gameModel";
-import { ICrystal, IFaction, IHero, IItem, IPlayerData, IPopulatedPlayerData, ITurnMessage } from "../interfaces/gameInterface";
+import { ICrystal, IHero, IItem, IPlayerData, IPopulatedPlayerData, ITurnMessage } from "../interfaces/gameInterface";
 import { CustomError } from "../classes/customError";
 import { EmailService } from "../emails/emailService";
 import { DiscordNotificationService } from "../services/discordNotificationService";
@@ -13,15 +12,22 @@ import IUser from "../interfaces/userInterface";
 import { updateELORatings } from "../game/elo";
 import User from "../models/userModel";
 import { mapTemplates } from "./mapTemplates";
+import { createCouncilDeckAndHand } from "../game/factions/councilData";
 
 /**
  * Creates a starting state for a given faction, randomizing the assets in deck and dealing a starting hand
  */
-export function createNewGameFactionState(userId: string, playerFaction: EFaction): IFaction {
-  const faction: Record<string, IFaction> = {
-    [EFaction.COUNCIL]: createCouncilFactionData(userId),
-    [EFaction.DARK_ELVES]: createElvesFactionData(userId),
-    [EFaction.DWARVES]: createDwarvesFactionData(userId)
+export function createNewGameDeckAndHand(userId: string, playerFaction: EFaction):  {
+  deck: (Partial<IHero> | IItem)[],
+  hand: (Partial<IHero> | IItem)[]
+} {
+  const faction: Record<string,  {
+    deck: (Partial<IHero> | IItem)[],
+    hand: (Partial<IHero> | IItem)[]
+  }> = {
+    [EFaction.COUNCIL]: createCouncilDeckAndHand(userId),
+    [EFaction.DARK_ELVES]: createElvesDeckAndHand(userId),
+    [EFaction.DWARVES]: createDwarvesDeckAndHand(userId)
   };
 
   return faction[playerFaction];

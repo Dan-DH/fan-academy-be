@@ -1,17 +1,17 @@
 import { EFaction, EItems, EClass, EBoardUnit, EHeroes } from "../../enums/game.enums";
-import { IFaction, IHero, IItem } from "../../interfaces/gameInterface";
+import { IHero, IItem } from "../../interfaces/gameInterface";
 import { shuffleDeck } from "../../utils/gameUtils";
 
-export function createCouncilFactionData(userId: string): IFaction {
-  const unitsInDeck = createCouncilDeck(userId);
-  const unitsInHand =  unitsInDeck.splice(0, 6);
-  const factionName = EFaction.COUNCIL;
+export function createCouncilDeckAndHand(userId: string): {
+  deck: (Partial<IHero> | IItem)[],
+  hand: (Partial<IHero> | IItem)[]
+} {
+  const deck = createCouncilDeck(userId);
+  const hand =  deck.splice(0, 6);
 
   return {
-    userId,
-    factionName,
-    unitsInDeck,
-    unitsInHand
+    deck,
+    hand
   };
 }
 

@@ -1,17 +1,17 @@
 import { EFaction, EItems, EClass, EBoardUnit, EHeroes } from "../../enums/game.enums";
-import { IFaction, IHero, IItem } from "../../interfaces/gameInterface";
+import { IHero, IItem } from "../../interfaces/gameInterface";
 import { shuffleDeck } from "../../utils/gameUtils";
 
-export function createDwarvesFactionData(userId: string): IFaction {
-  const unitsInDeck = createDwarvesDeck(userId);
-  const unitsInHand =  unitsInDeck.splice(0, 6);
-  const factionName = EFaction.DWARVES;
+export function createDwarvesDeckAndHand(userId: string):  {
+  deck: (Partial<IHero> | IItem)[],
+  hand: (Partial<IHero> | IItem)[]
+} {
+  const deck = createDwarvesDeck(userId);
+  const hand =  deck.splice(0, 6);
 
   return {
-    userId,
-    factionName,
-    unitsInDeck,
-    unitsInHand
+    deck,
+    hand
   };
 }
 

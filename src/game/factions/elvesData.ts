@@ -1,16 +1,16 @@
 import { EFaction, EItems, EClass, EBoardUnit, EHeroes } from "../../enums/game.enums";
-import { IFaction, IHero, IItem } from "../../interfaces/gameInterface";
+import { IHero, IItem } from "../../interfaces/gameInterface";
 import { shuffleDeck } from "../../utils/gameUtils";
 
-export function createElvesFactionData(userId: string): IFaction {
-  const unitsInDeck = createElvesDeck(userId);
-  const unitsInHand =  unitsInDeck.splice(0, 6);
-  const factionName = EFaction.DARK_ELVES;
+export function createElvesDeckAndHand(userId: string):  {
+  deck: (Partial<IHero> | IItem)[],
+  hand: (Partial<IHero> | IItem)[]
+} {
+  const deck = createElvesDeck(userId);
+  const hand =  deck.splice(0, 6);
   return {
-    userId,
-    factionName,
-    unitsInDeck,
-    unitsInHand
+    deck,
+    hand
   };
 }
 

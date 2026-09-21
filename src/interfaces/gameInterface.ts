@@ -62,16 +62,6 @@ export interface IHero {
   status?: number;
   shieldingAlly?: string;
 }
-/**
- * Faction Interface
- */
-// FIXME: changed to partial to fix type issue creating generic data. Remove is problematic
-export interface IFaction {
-  userId: string;
-  factionName: EFaction;
-  unitsInHand: (Partial<IHero> | IItem)[];
-  unitsInDeck: (Partial<IHero> | IItem)[];
-}
 
 /**
  * userData Interface
@@ -114,7 +104,8 @@ export interface ITurnAction {
  */
 export interface IPlayerState {
   playerId: Types.ObjectId;
-  factionData: IFaction;
+  hand: (Partial<IHero> | IItem)[];
+  deck: (Partial<IHero> | IItem)[];
 }
 
 /**

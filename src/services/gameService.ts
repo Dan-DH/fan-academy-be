@@ -4,7 +4,7 @@ import { EFaction, EGameModes, EGameStatus, EWinConditions } from "../enums/game
 import IGame, { IPlayerData, IPopulatedPlayerData, IPopulatedUserData } from "../interfaces/gameInterface";
 import ChatLog from "../models/chatlogModel";
 import Game from "../models/gameModel";
-import { createNewGameCrystals, createNewGameFactionState, updateUserStats } from "../utils/gameUtils";
+import { createNewGameCrystals, createNewGameDeckAndHand, updateUserStats } from "../utils/gameUtils";
 import { EmailService } from "../emails/emailService";
 import { DiscordNotificationService } from "./discordNotificationService";
 import User from "../models/userModel";
@@ -187,20 +187,20 @@ const GameService = {
 
       // Create the player decks
       gameLookingForPlayers.players.forEach((player, index) => {
-        const playerFaction = createNewGameFactionState(player.userData._id.toString(), player.faction!);
+        const playerFaction = createNewGameDeckAndHand(player.userData._id.toString(), player.faction!);
 
         if (index === 1) {
-          playerFaction.unitsInDeck.forEach(unit => unit.belongsTo = 2);
-          playerFaction.unitsInHand.forEach(unit => unit.belongsTo = 2);
+          playerFaction.deck.forEach(unit => unit.belongsTo = 2);
+          playerFaction.hand.forEach(unit => unit.belongsTo = 2);
 
           gameLookingForPlayers.previousTurn[0].player2 = {
             playerId: player.userData,
-            factionData: { ...playerFaction }
+            ...playerFaction
           };
         } else {
           gameLookingForPlayers.previousTurn[0].player1 = {
             playerId: player.userData,
-            factionData: { ...playerFaction }
+            ...playerFaction
           };
         }
       });
