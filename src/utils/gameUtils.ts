@@ -146,16 +146,19 @@ export function getProfilePaginationSortOrder(boardType: ELeaderboardEnum) {
 
 export async function handleGameOverUtil(message: ITurnMessage) {
   const finishedAt = new Date();
-  const { winner, winCondition } = message.gameOver!;
+  const { currentTurn, turnNumber, newActivePlayer, gameOver } = message;
+  const { winner, winCondition } = gameOver!;
+  const turnHistory = currentTurn.length > 1 ? currentTurn.slice(1) : currentTurn;
 
   const updatedGame = await Game.findByIdAndUpdate(message.gameId, {
-    previousTurn: message.currentTurn,
-    turnNumber: message.turnNumber,
-    activePlayer: message.newActivePlayer,
-    gameOver: message.gameOver,
+    previousTurn: currentTurn,
+    turnNumber,
+    activePlayer: newActivePlayer,
+    gameOver,
     status: EGameStatus.FINISHED,
     lastPlayedAt: finishedAt,
-    finishedAt
+    finishedAt,
+    $push: { turnHistory }
   }, {
     new: true,
     runValidators: true

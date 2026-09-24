@@ -95,7 +95,7 @@ export interface IPopulatedUserData {
 export interface ITurnAction {
   actorPosition?: number;
   targetPosition?: number; // an item can be a target for shuffle
-  action: EActionType,
+  action: EActionType; // FIXME: rename to actionType
   actionClass: EActionClass
 }
 
@@ -152,12 +152,14 @@ export default interface IGame {
   players: IPlayerData[];
   turnNumber: number,
   map: number,
+  turnHistory?: IGameState[][];
   previousTurn: IGameState[];
   gameOver?: IGameOver,
   status: EGameStatus;
   createdAt: Date;
   finishedAt?: Date;
   lastPlayedAt?: Date;
+  firstPlayer: Types.ObjectId;
   activePlayer?: Types.ObjectId; // userId
   chatLogs?: Types.ObjectId;
   gameMode: EGameModes;

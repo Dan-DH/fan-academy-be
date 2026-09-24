@@ -136,7 +136,7 @@ export class Lobby extends Room {
       }, { except: clientsToExclude });
     });
 
-    this.onMessage("turnSent", async (client: Client, message: ITurnMessage) => {
+    this.onMessage('turnSent', async (client: Client, message: ITurnMessage) => {
       console.log(`Turn sent by client ${(client as any).userId}`);
 
       if (message.gameOver) {
@@ -146,7 +146,7 @@ export class Lobby extends Room {
       }
     });
 
-    this.onMessage("createGame", async (client: Client, message: {
+    this.onMessage('createGame', async (client: Client, message: {
       userId: string,
       faction: EFaction,
       gameMode: EGameModes
@@ -160,6 +160,10 @@ export class Lobby extends Room {
       } else {
         this.matchMakingNoGameFound(message);
       }
+    });
+
+    this.onMessage('getTurnHistoryMessage', async (client: Client, message: { gameId: string, }) => {
+      return await GameService.getTurnHistory(message.gameId);
     });
   };
 
@@ -215,13 +219,15 @@ export class Lobby extends Room {
 
   async handleTurn(message: ITurnMessage): Promise<void> {
     const { gameId, currentTurn, turnNumber, newActivePlayer } = message;
+    const turnHistory = currentTurn.length > 1 ? currentTurn.slice(1) : currentTurn;
 
     const lastPlayedAt = new Date();
     const updatedGame = await Game.findByIdAndUpdate(gameId, {
-      previousTurn: currentTurn, // FIXME:
+      previousTurn: currentTurn,
       turnNumber,
       activePlayer: newActivePlayer,
-      lastPlayedAt
+      lastPlayedAt,
+      $push: { turnHistory }
     }, {
       new: true,
       runValidators: true

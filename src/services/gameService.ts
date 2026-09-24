@@ -1,7 +1,7 @@
 import { HydratedDocument, Types } from "mongoose";
 import { CustomError } from "../classes/customError";
 import { EFaction, EGameModes, EGameStatus, EWinConditions } from "../enums/game.enums";
-import IGame, { IPlayerData, IPopulatedPlayerData, IPopulatedUserData } from "../interfaces/gameInterface";
+import IGame, { IGameState, IPlayerData, IPopulatedPlayerData, IPopulatedUserData } from "../interfaces/gameInterface";
 import ChatLog from "../models/chatlogModel";
 import Game from "../models/gameModel";
 import { createNewGameCrystals, createNewGameDeckAndHand, updateUserStats } from "../utils/gameUtils";
@@ -21,21 +21,23 @@ const GameService = {
       'players.userData': userObjectId,
       status: EGameStatus.PLAYING,
       lastPlayedAt: { $lt: oneWeekAgo }
-    }).populate('players.userData', 'username email');
+    },
+    { turnHistory: 0 }
+    ).populate('players.userData', 'username email');
 
     if (timedOutGames) await this.handleTimedOutGames(timedOutGames);
 
     const openGames = await Game.find({
       'players.userData': userObjectId,
       status: { $ne: EGameStatus.FINISHED }
-    })
+    }, { turnHistory: 0 })
       .sort({ lastPlayedAt: 1 })
       .populate('players.userData', 'username picture').populate('chatLogs');
 
     const finishedGames = await Game.find({
       'players.userData': userObjectId,
       status: EGameStatus.FINISHED
-    })
+    }, { turnHistory: 0 })
       .sort({ finishedAt: -1 })
       .limit(5)
       .populate('players.userData', 'username picture').populate('chatLogs');
@@ -61,8 +63,18 @@ const GameService = {
     const result = await Game.findOne({
       _id: roomObjId,
       "players.userData": userObjId
-    });
+    }, { turnHistory: 0 });
     return result;
+  },
+
+  async getTurnHistory(gameId: string): Promise<{
+    _id: string,
+    turnHistory: IGameState[][]
+  } | null> {
+    return await Game.findOne({
+      _id: gameId,
+      status: EGameStatus.FINISHED
+    }, { turnHistory: 1 });
   },
 
   // POST ACTIONS
@@ -206,12 +218,14 @@ const GameService = {
       });
 
       gameLookingForPlayers.previousTurn[0].boardState = createNewGameCrystals(gameLookingForPlayers.map);
+      gameLookingForPlayers.turnHistory = [gameLookingForPlayers.previousTurn];
 
       gameLookingForPlayers.status = EGameStatus.PLAYING;
 
       // Randomly select the starting player
       const playerIds = gameLookingForPlayers.players.map((player: IPlayerData) => player.userData._id);
       gameLookingForPlayers.activePlayer = Math.random() > 0.5 ? playerIds[0] : playerIds[1];
+      gameLookingForPlayers.firstPlayer = gameLookingForPlayers.activePlayer;
 
       // Add date for display order in FE
       gameLookingForPlayers.lastPlayedAt = new Date();

@@ -309,6 +309,10 @@ const GameSchema = new Schema({
     type: Number,
     required: true
   },
+  turnHistory: {
+    type: [[GameStateSchema]],
+    default: []
+  },
   previousTurn: {
     type: [GameStateSchema],
     required: true
@@ -331,6 +335,10 @@ const GameSchema = new Schema({
   },
   lastPlayedAt: {
     type: Date,
+    required: false
+  },
+  firstPlayer: {
+    type: mongoose.Schema.Types.ObjectId,
     required: false
   },
   activePlayer: {
